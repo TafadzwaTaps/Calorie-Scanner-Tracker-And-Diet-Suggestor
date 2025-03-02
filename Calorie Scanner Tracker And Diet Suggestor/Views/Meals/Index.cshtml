@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "Meals";
+    var mealType = ViewData["MealType"]?.ToString();
+    var meals = ViewData["Meals"] as List<string>;
+}
+
+<div class="container mt-5">
+    <h1 class="text-center">Meals for <span class="text-primary">@mealType</span></h1>
+    <p class="text-center">Here are some meal options for @mealType.</p>
+
+    <div class="row justify-content-center">
+        @foreach (var meal in meals)
+        {
+            <div class="col-md-4">
+                <div class="card meal-card p-3">
+                    <h3>@meal</h3>
+                    <p>Healthy and nutritious choice for @mealType.</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="text-center mt-4">
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="breakfast" class="btn btn-info">Breakfast</a>
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="lunch" class="btn btn-warning">Lunch</a>
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="dinner" class="btn btn-success">Dinner</a>
+    </div>
+</div>
