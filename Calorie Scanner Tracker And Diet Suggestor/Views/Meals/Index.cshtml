@@ -1,31 +1,119 @@
 ﻿@model List<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Meals>
-
-
 @{
-    ViewData["Title"] = "Meals";
-    var mealType = ViewData["MealType"]?.ToString();
+    ViewData["Title"] = "Meals for " + ViewData["MealType"];
 }
 
 <div class="container mt-5">
-    <h1 class="text-center">Meals for <span class="text-primary">@mealType</span></h1>
-    <p class="text-center">Here are some meal options for @mealType.</p>
+    <h1 class="text-center mb-4">Meals for <span class="text-primary">@ViewData["MealType"]</span></h1>
+    <p class="text-center mb-5">Here are some meal options for @ViewData["MealType"].</p>
 
-    <div class="row justify-content-center">
+    <!-- Meal Type Buttons with Icons -->
+    <div class="text-center mb-4">
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="breakfast" class="btn btn-info mx-2">
+            <i class="fas fa-sun"></i> Breakfast
+        </a>
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="lunch" class="btn btn-warning mx-2">
+            <i class="fas fa-utensils"></i> Lunch
+        </a>
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="dinner" class="btn btn-success mx-2">
+            <i class="fas fa-moon"></i> Dinner
+        </a>
+    </div>
+
+    <!-- Meal Cards Display -->
+    <div class="row row-cols-1 row-cols-md-3 g-4">
         @foreach (var meal in Model)
         {
-            <div class="col-md-4">
-                <div class="card meal-card p-3">
-                    <h3>@meal.Name</h3>
-                    <p>Calories: @meal.Calories</p>
-                    <p>Protein: @meal.Protein g | Carbs: @meal.Carbs g | Fats: @meal.Fats g</p>
+            <div class="col">
+                <div class="card shadow-lg meal-card h-100">
+                    <div class="card-body">
+                        <h3 class="card-title">@meal.Name</h3>
+                        <p class="card-text"><strong>Calories:</strong> @meal.Calories</p>
+                        <p class="card-text"><strong>Protein:</strong> @meal.Protein g | <strong>Carbs:</strong> @meal.Carbs g | <strong>Fats:</strong> @meal.Fats g</p>
+                    </div>
                 </div>
             </div>
         }
     </div>
 
+    <!-- Pagination Links (Styled) -->
     <div class="text-center mt-4">
-        <a asp-controller="Meals" asp-action="Index" asp-route-type="breakfast" class="btn btn-info">Breakfast</a>
-        <a asp-controller="Meals" asp-action="Index" asp-route-type="lunch" class="btn btn-warning">Lunch</a>
-        <a asp-controller="Meals" asp-action="Index" asp-route-type="dinner" class="btn btn-success">Dinner</a>
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item"><a class="page-link" href="@Url.Action("Index", "Meals", new { type = ViewData["MealType"], page = 1 })">1</a></li>
+                <li class="page-item"><a class="page-link" href="@Url.Action("Index", "Meals", new { type = ViewData["MealType"], page = 2 })">2</a></li>
+                <li class="page-item"><a class="page-link" href="@Url.Action("Index", "Meals", new { type = ViewData["MealType"], page = 3 })">3</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Filter by Calories (Styled Form) -->
+    <div class="text-center mt-4">
+        <h5>Filter by Calories:</h5>
+        <form method="get" asp-controller="Meals" asp-action="FilterByCalories" class="form-inline justify-content-center">
+            <div class="form-group mx-2">
+                <label for="minCalories" class="sr-only">Min Calories</label>
+                <input type="number" name="minCalories" id="minCalories" class="form-control" placeholder="Min Calories">
+            </div>
+            <div class="form-group mx-2">
+                <label for="maxCalories" class="sr-only">Max Calories</label>
+                <input type="number" name="maxCalories" id="maxCalories" class="form-control" placeholder="Max Calories">
+            </div>
+            <button type="submit" class="btn btn-primary mx-2">Apply Filter</button>
+        </form>
+    </div>
+
+    <!-- Sort Meals (Buttons with Icons) -->
+    <div class="text-center mt-4">
+        <h5>Sort Meals by:</h5>
+        <div class="btn-group" role="group" aria-label="Sort Meals">
+            <a asp-controller="Meals" asp-action="SortMeals" asp-route-sortBy="Calories" asp-route-order="asc" class="btn btn-outline-info">
+                <i class="fas fa-arrow-down"></i> Calories (Low to High)
+            </a>
+            <a asp-controller="Meals" asp-action="SortMeals" asp-route-sortBy="Calories" asp-route-order="desc" class="btn btn-outline-info">
+                <i class="fas fa-arrow-up"></i> Calories (High to Low)
+            </a>
+            <a asp-controller="Meals" asp-action="SortMeals" asp-route-sortBy="Protein" asp-route-order="asc" class="btn btn-outline-info">
+                <i class="fas fa-arrow-down"></i> Protein (Low to High)
+            </a>
+            <a asp-controller="Meals" asp-action="SortMeals" asp-route-sortBy="Protein" asp-route-order="desc" class="btn btn-outline-info">
+                <i class="fas fa-arrow-up"></i> Protein (High to Low)
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Meals (Search Bar with Icons) -->
+    <div class="text-center mt-4">
+        <h5>Search Meals:</h5>
+        <form method="get" asp-controller="Meals" asp-action="SearchMeals" class="d-flex justify-content-center">
+            <div class="input-group">
+                <input type="text" name="searchTerm" class="form-control" placeholder="Search by Name or Ingredients">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Suggest Meals (Form with Max Calories Input) -->
+    <div class="text-center mt-4">
+        <h5>Suggest Meals:</h5>
+        <form method="get" asp-controller="Meals" asp-action="SuggestMeals" class="d-flex justify-content-center">
+            <div class="form-group mx-2">
+                <label for="maxCalories" class="sr-only">Max Calories</label>
+                <input type="number" name="maxCalories" class="form-control" placeholder="Max Calories">
+            </div>
+            <button type="submit" class="btn btn-success mx-2">Suggest</button>
+            <!-- add a new meal -->
+            <div class="text-end mb-3">
+                <a asp-action="PostMeal" class="btn btn-success">➕ Add New Meal</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Meal Count (Styled Text) -->
+    <div class="text-center mt-4">
+        <p><strong>Total meals for this type:</strong> <span class="badge bg-primary">@Model.Count()</span></p>
     </div>
 </div>
+
+<!-- Add Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />

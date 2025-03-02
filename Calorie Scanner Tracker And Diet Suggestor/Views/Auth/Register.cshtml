@@ -11,31 +11,33 @@
 
     <style>
         :root {
-            --bg-light: white;
-            --text-light: black;
+            --bg-light: #f8f9fa;
+            --text-light: #212529;
+            --card-light: white;
             --btn-light: #0d6efd;
-            --card-light: #f8f9fa;
-            --bg-dark: black;
-            --text-dark: white;
+            --bg-dark: #121212;
+            --text-dark: #f8f9fa;
+            --card-dark: #1e1e1e;
             --btn-dark: #1e3a8a;
-            --card-dark: #121212;
         }
 
         body {
             background-color: var(--bg-light);
             color: var(--text-light);
-            transition: background-color 0.3s, color 0.3s;
+            transition: background 0.3s ease-in-out, color 0.3s ease-in-out;
         }
 
         .card {
             background-color: var(--card-light);
             color: var(--text-light);
-            transition: background-color 0.3s, color 0.3s;
+            border: none;
+            transition: background 0.3s ease-in-out, color 0.3s ease-in-out;
         }
 
         .btn-primary {
             background-color: var(--btn-light);
             border: none;
+            font-weight: 600;
         }
 
             .btn-primary:hover {
@@ -66,40 +68,54 @@
             justify-content: center;
             margin-bottom: 15px;
         }
+
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .dark-mode .form-control {
+            background-color: #222;
+            color: white;
+            border: 1px solid #444;
+        }
     </style>
 </head>
 
 <body>
-    <!-- Toggle Button -->
+    <!-- Dark Mode Toggle -->
     <div class="toggle-container">
-        <button id="darkModeToggle" class="btn btn-secondary">🌙 Toggle Dark Mode</button>
+        <button id="darkModeToggle" class="btn btn-outline-secondary">
+            <i class="fas fa-moon"></i> Toggle Dark Mode
+        </button>
     </div>
 
     <div class="container d-flex justify-content-center align-items-center vh-100">
-        <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%;">
-            <h2 class="text-center mb-4">Create an Account</h2>
+        <div class="card shadow-lg p-4 rounded-4" style="max-width: 400px; width: 100%;">
+            <h2 class="text-center mb-4 fw-bold text-primary">Create an Account</h2>
 
             <form method="post" asp-action="Register">
                 <div class="mb-3">
-                    <label class="form-label">Name</label>
-                    <input type="text" class="form-control" asp-for="Username" required placeholder="Enter your full name">
+                    <label class="form-label fw-semibold">Name</label>
+                    <input type="text" class="form-control p-2" asp-for="Username" required placeholder="Enter your full name">
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" asp-for="Email" required placeholder="Enter your email">
+                    <label class="form-label fw-semibold">Email</label>
+                    <input type="email" class="form-control p-2" asp-for="Email" required placeholder="Enter your email">
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-control" asp-for="PasswordHash" required placeholder="Enter a strong password">
+                    <label class="form-label fw-semibold">Password</label>
+                    <input type="password" class="form-control p-2" asp-for="PasswordHash" required placeholder="Enter a strong password">
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100">Register</button>
+                <button type="submit" class="btn btn-primary w-100 py-2 rounded-3">Register</button>
             </form>
 
             <p class="text-center mt-3">
-                Already have an account? <a href="/Auth/Login" class="text-decoration-none">Login</a>
+                Already have an account? <a href="/Auth/Login" class="text-decoration-none text-success fw-semibold">Login</a>
             </p>
         </div>
     </div>
@@ -108,8 +124,20 @@
         const darkModeToggle = document.getElementById("darkModeToggle");
         const body = document.body;
 
+        // Load Dark Mode Preference
+        if (localStorage.getItem("dark-mode") === "enabled") {
+            body.classList.add("dark-mode");
+        }
+
         darkModeToggle.addEventListener("click", () => {
             body.classList.toggle("dark-mode");
+
+            // Save Preference
+            if (body.classList.contains("dark-mode")) {
+                localStorage.setItem("dark-mode", "enabled");
+            } else {
+                localStorage.removeItem("dark-mode");
+            }
         });
     </script>
 </body>
