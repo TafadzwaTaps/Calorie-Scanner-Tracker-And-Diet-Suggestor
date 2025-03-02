@@ -16,25 +16,27 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             _context = context;
         }
 
-        private static readonly Dictionary<string, List<string>> meals = new()
-        {
-            { "breakfast", new List<string> { "Oatmeal", "Scrambled Eggs", "Fruit Smoothie" } },
-            { "lunch", new List<string> { "Grilled Chicken Salad", "Quinoa Bowl", "Pasta" } },
-            { "dinner", new List<string> { "Steak with Vegetables", "Salmon & Rice", "Vegetable Stir-Fry" } }
-        };
-
         [HttpGet]
         [Route("Meals")]
-        public IActionResult Index([FromQuery] string type = "breakfast")
+        public async Task<IActionResult> Index([FromQuery] string type = "breakfast")
         {
-            if (string.IsNullOrEmpty(type) || !meals.ContainsKey(type.ToLower()))
+            if (string.IsNullOrEmpty(type))
             {
                 return NotFound("Meal type not found. Use 'breakfast', 'lunch', or 'dinner'.");
             }
 
+            // Fetch meals from database based on type
+            var meals = await _context.Meals
+                .Where(m => m.MealType.ToLower() == type.ToLower())
+                .ToListAsync();
+
+            if (meals == null || !meals.Any())
+            {
+                return NotFound($"No meals found for {type}.");
+            }
+
             ViewData["MealType"] = type;
-            ViewData["Meals"] = meals[type.ToLower()];
-            return View();
+            return View(meals); // Pass the meals list to the view
         }
 
 

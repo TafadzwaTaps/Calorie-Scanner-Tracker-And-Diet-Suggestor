@@ -1,7 +1,9 @@
-﻿@{
+﻿@model List<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Meals>
+
+
+@{
     ViewData["Title"] = "Meals";
     var mealType = ViewData["MealType"]?.ToString();
-    var meals = ViewData["Meals"] as List<string>;
 }
 
 <div class="container mt-5">
@@ -9,12 +11,13 @@
     <p class="text-center">Here are some meal options for @mealType.</p>
 
     <div class="row justify-content-center">
-        @foreach (var meal in meals)
+        @foreach (var meal in Model)
         {
             <div class="col-md-4">
                 <div class="card meal-card p-3">
-                    <h3>@meal</h3>
-                    <p>Healthy and nutritious choice for @mealType.</p>
+                    <h3>@meal.Name</h3>
+                    <p>Calories: @meal.Calories</p>
+                    <p>Protein: @meal.Protein g | Carbs: @meal.Carbs g | Fats: @meal.Fats g</p>
                 </div>
             </div>
         }
