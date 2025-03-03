@@ -120,13 +120,22 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return Ok(new { Count = count });
         }
 
-        // Get a specific meal by ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<Meals>> GetMeal(int id)
+        public async Task<IActionResult> GetMeal(int id)
         {
             var meal = await _context.Meals.FindAsync(id);
             if (meal == null) return NotFound();
-            return meal;
+            return Ok(new
+            {
+                meal.Id,
+                meal.Name,
+                meal.Calories,
+                meal.Protein,
+                meal.Carbs,
+                meal.Fats,
+                meal.MealType,
+                meal.PreparationSteps // Include steps
+            });
         }
 
         [HttpGet]
@@ -142,7 +151,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         {
             _context.Meals.Add(meal);
             await _context.SaveChangesAsync();
-            return CreatedAtAction("GetMeal", new { id = meal.Id }, meal);
+            return RedirectToAction(nameof(Index)); // Redirect to the list of meals
         }
 
         // Update an existing meal in the database
@@ -164,6 +173,14 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             _context.Meals.Remove(meal);
             await _context.SaveChangesAsync();
             return NoContent();
+        }
+
+        public async Task<IActionResult> PreparationSteps(int id)
+        {
+            var meal = await _context.Meals.FindAsync(id);
+            if (meal == null) return NotFound();
+
+            return View(meal);
         }
     }
 }

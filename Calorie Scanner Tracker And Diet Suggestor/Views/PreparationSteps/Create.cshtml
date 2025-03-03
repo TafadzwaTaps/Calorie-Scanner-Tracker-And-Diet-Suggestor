@@ -1,0 +1,25 @@
+﻿@model Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.PreparationStep
+
+@{
+    ViewData["Title"] = "Add Preparation Step";
+}
+
+<h2>Add a Preparation Step</h2>
+
+<form asp-action="Create" asp-route-mealId="@ViewBag.MealId" method="post">
+    <input type="hidden" asp-for="MealId" /> <!-- Ensure MealId is included -->
+
+    <div class="mb-3">
+        <label class="form-label">Step Number</label>
+        <input type="number" asp-for="StepNumber" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea asp-for="Description" class="form-control" required></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Step</button>
+</form>
+
+<a href="@Url.Action("Index", "PreparationSteps", new { mealId = ViewBag.MealId })" class="btn btn-secondary">Back</a>

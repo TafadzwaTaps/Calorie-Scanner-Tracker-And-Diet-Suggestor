@@ -1,0 +1,25 @@
+﻿@model Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Meals
+
+@{
+    ViewData["Title"] = "Meal Preparation Steps";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center text-primary">@Model.Name</h2>
+    <p class="text-center text-muted">Meal Type: @Model.MealType</p>
+
+    <div class="card shadow-lg p-4">
+        <h4>Nutrition Facts</h4>
+        <ul class="list-group mb-3">
+            <li class="list-group-item"><strong>Calories:</strong> @Model.Calories kcal</li>
+            <li class="list-group-item"><strong>Protein:</strong> @Model.Protein g</li>
+            <li class="list-group-item"><strong>Carbs:</strong> @Model.Carbs g</li>
+            <li class="list-group-item"><strong>Fats:</strong> @Model.Fats g</li>
+        </ul>
+
+        <h4>Preparation Steps</h4>
+        <p class="lead">@Model.PreparationSteps</p>
+
+        <a href="@Url.Action("Index", "Meals")" class="btn btn-outline-primary mt-3">Back to Meals</a>
+    </div>
+</div>

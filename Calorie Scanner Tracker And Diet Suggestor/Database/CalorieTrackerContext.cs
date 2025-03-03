@@ -16,6 +16,8 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Database
         public DbSet<Meals> Meals { get; set; }
         public DbSet<Users> Users { get; set; }
         public DbSet<FoodLog> FoodLogs { get; set; }
+        public DbSet<PreparationStep> PreparationSteps { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -28,7 +30,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Database
             modelBuilder.Entity<Meals>().HasKey(t => t.Id);
             modelBuilder.Entity<Users>().HasKey(t => t.Id);
             modelBuilder.Entity<FoodLog>().HasKey(t => t.Id);
-
+            modelBuilder.Entity<PreparationStep>().HasKey(t => t.Id);
 
         }
     }

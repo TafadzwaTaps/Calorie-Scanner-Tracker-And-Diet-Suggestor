@@ -1,0 +1,35 @@
+﻿@model Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Meals
+
+@{
+    ViewData["Title"] = "Preparation Steps";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center text-primary">@Model.Name - Preparation Steps</h2>
+
+    <div class="card shadow-lg p-4">
+        @if (Model.PreparationSteps.Any())
+        {
+            <ul class="list-group">
+                @foreach (var step in Model.PreparationSteps.OrderBy(s => s.StepNumber))
+                {
+                    <li class="list-group-item">
+                        <strong>Step @step.StepNumber:</strong> @step.Description
+                        <form method="post" asp-action="Delete" asp-route-id="@step.Id" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-danger ms-2">Delete</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted">No preparation steps added yet.</p>
+        }
+
+        <a href="@Url.Action("Create", "PreparationSteps", new { mealId = Model.Id })"
+           class="btn btn-primary mt-3">Add Step</a>
+
+        <a href="@Url.Action("Index", "Meals")" class="btn btn-secondary mt-3">Back to Meals</a>
+    </div>
+</div>
