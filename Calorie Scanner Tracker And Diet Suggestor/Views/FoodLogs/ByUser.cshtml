@@ -1,0 +1,21 @@
+﻿@model IEnumerable<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.FoodLog>
+
+<h2>Food Logs for User</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Meal</th>
+            <th>Date Logged</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model)
+        {
+            <tr>
+                <td>@log.Meal?.Name</td>
+                <td>@log.DateLogged.ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+        }
+    </tbody>
+</table>

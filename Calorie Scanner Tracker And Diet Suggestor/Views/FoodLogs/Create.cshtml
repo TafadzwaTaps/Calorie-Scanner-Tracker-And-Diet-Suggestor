@@ -1,0 +1,17 @@
+﻿@model Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.FoodLog
+
+@{
+    ViewData["Title"] = "Add Food Log";
+}
+
+<h2>Log a Meal</h2>
+
+<form asp-action="Create" method="post">
+    <div class="mb-3">
+        <label for="MealId" class="form-label">Select Meal</label>
+        <select asp-for="MealId" class="form-control" asp-items="ViewBag.Meals"></select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Log Meal</button>
+</form>
+

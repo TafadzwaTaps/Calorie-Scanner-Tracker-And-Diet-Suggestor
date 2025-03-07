@@ -1,0 +1,56 @@
+﻿@model IEnumerable<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.FoodLog>
+
+@{
+    ViewData["Title"] = "Food Logs";
+}
+
+<h2>Food Logs</h2> 
+
+<!-- Link to Food Log Dashboard for Logged-in User -->
+<a href="@Url.Action("Dashboard", "FoodLogs")" class="btn btn-success">View My Dashboard</a>
+
+<!-- Admin-only filters -->
+@if (User.IsInRole("Admin")) // Only show this if the user is an Admin
+{
+    <form method="get" action="@Url.Action("GetFoodLogsByUser", "FoodLogs")">
+        <label for="userId">User ID:</label>
+        <input type="number" name="userId" required />
+        <button type="submit" class="btn btn-primary">View User Logs</button>
+    </form>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Meal</th>
+            <th>Date Logged</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model)
+        {
+            <tr>
+                <td>@(log.User?.Username ?? "Unknown")</td>
+                <td>@(log.Meal?.Name ?? "Unknown Meal")</td>
+                <td>@log.DateLogged.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>
+                    <form asp-action="Delete" asp-route-id="@log.Id" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Create" class="btn btn-primary">Add New Food Log</a>
+
+@{
+    ViewData["Title"] = "Food Logs";
+}
+
+
+
+

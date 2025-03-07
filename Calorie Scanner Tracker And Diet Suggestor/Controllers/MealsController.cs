@@ -182,5 +182,10 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             return View(meal);
         }
+
+        public IActionResult Meals()
+        {
+            return View();
+        }
     }
 }

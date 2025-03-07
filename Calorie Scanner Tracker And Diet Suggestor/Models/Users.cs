@@ -13,6 +13,9 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
         [NotMapped]
         public string Password { get; set; }
         public string? PasswordHash { get; set; }
+
+        [Required]
+        public string Role { get; set; } = "User"; // Default role
         public List<FoodLog>? FoodLogs { get; set; }
 
         public Users()

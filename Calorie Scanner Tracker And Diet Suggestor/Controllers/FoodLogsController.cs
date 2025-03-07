@@ -1,13 +1,18 @@
 ﻿using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class FoodLogsController : ControllerBase
+    [Authorize]
+    [Route("[controller]")]
+    public class FoodLogsController : Controller
     {
         private readonly CalorieTrackerContext _context;
 
@@ -17,17 +22,136 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<FoodLog>>> GetFoodLogs()
+        public async Task<IActionResult> Index()
         {
-            return await _context.FoodLogs.Include(f => f.Meal).Include(f => f.User).ToListAsync();
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized(); // Ensure the user is authenticated
+            }
+
+            int userId = int.Parse(userIdClaim); // Now it's safe to parse
+
+            if (userRole == "Admin")
+            {
+                var foodLogs = await _context.FoodLogs
+                    .Include(f => f.Meal)
+                    .Include(f => f.User)
+                    .ToListAsync();
+                return View("AdminIndex", foodLogs);
+            }
+            else
+            {
+                var userLogs = await _context.FoodLogs
+                    .Where(f => f.UserId == userId)
+                    .Include(f => f.Meal)
+                    .OrderByDescending(f => f.DateLogged)
+                    .ToListAsync();
+                return View("UserIndex", userLogs);
+            }
+        }
+
+
+
+        [HttpGet]
+        [Route("Create")]
+        public async Task<IActionResult> Create()
+        {
+            ViewBag.Users = new SelectList(await _context.Users.ToListAsync(), "Id", "Username");
+            ViewBag.Meals = new SelectList(await _context.Meals.ToListAsync(), "Id", "Name");
+            return View();
         }
 
         [HttpPost]
-        public async Task<ActionResult<FoodLog>> PostFoodLog(FoodLog foodLog)
+        [ValidateAntiForgeryToken]
+        [Route("Create")]
+        public async Task<IActionResult> Create(FoodLog foodLog)
         {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return RedirectToAction("Login", "Account"); // Redirect to login instead of returning 401
+            }
+
+            foodLog.UserId = int.Parse(userIdClaim);
+            foodLog.DateLogged = DateTime.UtcNow;
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Meals = new SelectList(await _context.Meals.ToListAsync(), "Id", "Name");
+                return View(foodLog);
+            }
+
             _context.FoodLogs.Add(foodLog);
             await _context.SaveChangesAsync();
-            return CreatedAtAction("GetFoodLogs", new { id = foodLog.Id }, foodLog);
+
+            return RedirectToAction(nameof(Dashboard));
         }
+
+
+
+        [HttpPost]
+        [Route("Delete/{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var foodLog = await _context.FoodLogs.FindAsync(id);
+            if (foodLog == null)
+            {
+                return NotFound();
+            }
+
+            _context.FoodLogs.Remove(foodLog);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet("ByUser/{userId}")]
+        public async Task<ActionResult<IEnumerable<FoodLog>>> GetFoodLogsByUser(int userId)
+        {
+            var logs = await _context.FoodLogs
+                .Where(f => f.UserId == userId)
+                .Include(f => f.Meal)
+                .Include(f => f.User)
+                .ToListAsync();
+
+            return logs;
+        }
+
+        [HttpGet("ByDate/{date}")]
+        public async Task<ActionResult<IEnumerable<FoodLog>>> GetFoodLogsByDate(DateTime date)
+        {
+            var logs = await _context.FoodLogs
+                .Where(f => f.DateLogged.Date == date.Date)
+                .Include(f => f.Meal)
+                .Include(f => f.User)
+                .ToListAsync();
+
+            return logs;
+        }
+
+        [HttpGet("Dashboard")]
+        public async Task<IActionResult> Dashboard()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return RedirectToAction("Login", "Account"); // Redirect to login instead of returning 401
+            }
+
+            int userId = int.Parse(userIdClaim);
+
+            var logs = await _context.FoodLogs
+                .Where(f => f.UserId == userId)
+                .Include(f => f.Meal)
+                .OrderByDescending(f => f.DateLogged)
+                .Take(5)
+                .ToListAsync();
+
+            return View(logs);
+        }
+
     }
 }
+ 
