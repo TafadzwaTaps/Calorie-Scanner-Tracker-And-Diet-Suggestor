@@ -24,11 +24,17 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            // Log authentication claims
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
+            Console.WriteLine($"[DEBUG] UserId Claim: {userIdClaim}");
+            Console.WriteLine($"[DEBUG] User Role: {userRole}");
+            Console.WriteLine($"[DEBUG] User Authenticated: {User.Identity.IsAuthenticated}");
+
             if (string.IsNullOrEmpty(userIdClaim))
             {
+                Console.WriteLine("[ERROR] User is not authenticated!");
                 return Unauthorized(); // Ensure the user is authenticated
             }
 
@@ -55,6 +61,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
 
 
+
         [HttpGet]
         [Route("Create")]
         public async Task<IActionResult> Create()
@@ -70,8 +77,14 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         public async Task<IActionResult> Create(FoodLog foodLog)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            Console.WriteLine($"[DEBUG] Create Method - UserId: {userIdClaim}, Role: {userRole}");
+            Console.WriteLine($"[DEBUG] User Authenticated: {User.Identity.IsAuthenticated}");
+
             if (string.IsNullOrEmpty(userIdClaim))
             {
+                Console.WriteLine("[ERROR] Unauthorized attempt to create food log!");
                 return RedirectToAction("Login", "Account"); // Redirect to login instead of returning 401
             }
 
@@ -89,6 +102,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             return RedirectToAction(nameof(Dashboard));
         }
+
 
 
 
@@ -135,8 +149,14 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         public async Task<IActionResult> Dashboard()
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            Console.WriteLine($"[DEBUG] Dashboard Access - UserId: {userIdClaim}, Role: {userRole}");
+            Console.WriteLine($"[DEBUG] User Authenticated: {User.Identity.IsAuthenticated}");
+
             if (string.IsNullOrEmpty(userIdClaim))
             {
+                Console.WriteLine("[ERROR] Unauthorized access to Dashboard!");
                 return RedirectToAction("Login", "Account"); // Redirect to login instead of returning 401
             }
 
@@ -151,6 +171,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             return View(logs);
         }
+
 
     }
 }

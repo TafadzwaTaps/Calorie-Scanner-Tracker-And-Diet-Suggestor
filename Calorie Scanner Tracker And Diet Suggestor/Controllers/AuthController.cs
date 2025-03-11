@@ -46,27 +46,38 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(Users user)
         {
-            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
+            Console.WriteLine($"[DEBUG] Email: {user.Email}");
+            Console.WriteLine($"[DEBUG] Password: {user.Password}"); // Check if null
 
-            if (dbUser == null || !BCrypt.Net.BCrypt.Verify(user.PasswordHash, dbUser.PasswordHash))
+            if (string.IsNullOrEmpty(user.Password))
             {
-                ModelState.AddModelError("", "Invalid email or password.");
-                return View(); // Stay on login page
+                ModelState.AddModelError("", "Password is required.");
+                return View();
             }
 
-            // ✅ Authentication using Cookie Authentication
-            var claims = new List<Claim>
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
+
+            if (dbUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, dbUser.PasswordHash))
             {
-                new Claim(ClaimTypes.Name, dbUser.Id.ToString()),
-                new Claim(ClaimTypes.Email, dbUser.Email)
-            };
+                ModelState.AddModelError("", "Invalid email or password.");
+                return View();
+            }
+
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
+        new Claim(ClaimTypes.Email, dbUser.Email),
+        new Claim(ClaimTypes.Role, dbUser.Role)
+    };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            return RedirectToAction("HomePage", "Home");  // ✅ Redirect to homepage
+            return RedirectToAction("HomePage", "Home");
         }
+
+
 
         public IActionResult LoginWithGoogle()
         {

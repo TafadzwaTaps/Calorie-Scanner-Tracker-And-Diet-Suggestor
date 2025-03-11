@@ -1,0 +1,27 @@
+﻿networks:
+  app_network:  # Define a custom network
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=CalorieTracker;User Id=sa;Password=Matrix!23Secure;
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - app_network  # Connect app to custom network
+
+  db:  # Ensure the db service is correctly placed under services
+    image: rathious23/trtserver:latest
+    container_name: TmxServerNew
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Matrix!23Secure
+    ports:
+      - "1433:1433"
+    networks:
+      - app_network  # Connect db to the same network
