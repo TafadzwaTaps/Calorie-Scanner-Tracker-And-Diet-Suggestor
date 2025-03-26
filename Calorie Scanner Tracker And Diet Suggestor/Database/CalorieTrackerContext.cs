@@ -17,6 +17,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Database
         public DbSet<Users> Users { get; set; }
         public DbSet<FoodLog> FoodLogs { get; set; }
         public DbSet<PreparationStep> PreparationSteps { get; set; }
+        public DbSet<UserPreferences> UserPreferences { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

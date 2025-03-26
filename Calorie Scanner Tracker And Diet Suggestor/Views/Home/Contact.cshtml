@@ -1,5 +1,104 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿<form action="https://api.web3forms.com/submit" method="POST" class="form-container">
+
+    <!-- Replace with your Access Key -->
+    <input type="hidden" name="access_key" value="5163e4c9-4cd4-47ba-9720-ea722ebcab40">
+
+    <h2>Contact Us</h2>
+
+    <label for="name">Full Name</label>
+    <input type="text" id="name" name="name" required placeholder="Enter your name">
+
+    <label for="email">Email Address</label>
+    <input type="email" id="email" name="email" required placeholder="Enter your email">
+
+    <label for="message">Your Message</label>
+    <textarea id="message" name="message" required placeholder="Type your message here..."></textarea>
+
+    <!-- Honeypot Spam Protection -->
+    <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
+    <button type="submit">Send Message</button>
+
+</form>
+
+<style>
+    :root {
+        --bg-light: #f4f4f9;
+        --text-light: #333;
+        --bg-dark: #1e1e2e;
+        --text-dark: #ffffff;
+        --accent: #4CAF50;
+    }
+
+    body {
+        background-color: var(--bg-light);
+        color: var(--text-light);
+        margin-top: 0; /* Ensure no unexpected margin around the body */
+        padding-top: 0;
+        transition: background 0.3s, color 0.3s;
+    }
+
+    .dark-mode {
+        background-color: var(--bg-dark);
+        color: var(--text-dark);
+    }
+
+    .form-container {
+        max-width: 400px;
+        margin: 30px auto; /* Adjust margin to add space around the form */
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s, color 0.3s;
+    }
+
+    .dark-mode .form-container {
+        background: #2a2a40;
+    }
+
+    h2 {
+        text-align: center;
+        color: var(--accent);
+    }
+
+    label {
+        display: block;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    input, textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background: inherit;
+        color: inherit;
+    }
+
+    button {
+        width: 100%;
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 15px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+        button:hover {
+            background: #45a049;
+        }
+</style>
+
+<script>
+    // Handle Dark Mode Toggle
+    const darkModeToggle = document.querySelector("#dark-mode-toggle"); // Ensure you have a button with this ID
+    darkModeToggle.addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+    });
+</script>

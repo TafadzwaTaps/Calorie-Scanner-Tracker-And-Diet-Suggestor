@@ -172,6 +172,36 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View(logs);
         }
 
+        public async Task<IActionResult> FoodLogs(int userId)
+        {
+            var foodLogs = await _context.FoodLogs
+                .Where(f => f.UserId == userId)
+                .Join(_context.Meals,
+                    foodLog => foodLog.MealId,
+                    meal => meal.Id,
+                    (foodLog, meal) => new
+                    {
+                        foodLog.Id,
+                        foodLog.DateLogged,
+                        meal.Name,
+                        meal.Calories,
+                        meal.Protein,
+                        meal.Carbs,
+                        meal.Fats
+                    })
+                .ToListAsync();
+
+            return View(foodLogs);
+        }
+
+        public async Task<IActionResult> SuggestMeals(int maxCalories, string dietaryRestrictions)
+        {
+            var meals = await _context.Meals
+                .Where(m => m.Calories <= maxCalories && m.MealType.Contains(dietaryRestrictions))
+                .ToListAsync();
+
+            return View("Index", meals);
+        }
 
     }
 }

@@ -126,5 +126,26 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             return RedirectToAction("Index", "Home");
         }
+
+        public IActionResult Questionnaire(int userId)
+        {
+            var userPreferences = new UserPreferences { UserId = userId };
+            return View(userPreferences);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Questionnaire(UserPreferences preferences)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.UserPreferences.Add(preferences);
+                await _context.SaveChangesAsync();
+
+                // Redirect to login or dashboard after completion
+                return RedirectToAction("Login");
+            }
+            return View(preferences);
+        }
+
     }
 }
