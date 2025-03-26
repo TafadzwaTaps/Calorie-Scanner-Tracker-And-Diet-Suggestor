@@ -107,11 +107,50 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 return RedirectToAction("Login");
             }
 
-            var claims = result.Principal.Identities
-                .FirstOrDefault()?.Claims.Select(c => new { c.Type, c.Value });
+            // Extract user details
+            var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
+            var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            if (email == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            // Check if user exists in the database
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                // Register new user
+                user = new Users
+                {
+                    Email = email,
+                    Username = name ?? "Google User",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), // Google users don't have passwords
+                    Role = "User"
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+
+            // Create authentication claims
+            var userClaims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(ClaimTypes.Email, user.Email),
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Role, user.Role)
+    };
+
+            var identity = new ClaimsIdentity(userClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
             return RedirectToAction("Index", "Home");
         }
+
 
         public async Task<IActionResult> FacebookResponse()
         {

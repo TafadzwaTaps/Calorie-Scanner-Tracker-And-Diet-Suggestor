@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
@@ -93,6 +93,9 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             // Sign out the user (Ensure await)
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // ✅ Set flash message before redirecting
+            TempData["SuccessMessage"] = "You have been logged out successfully.";
 
             // Redirect to Login or Home instead of LogOut (ensure correct controller)
             return RedirectToAction("Login", "Auth");

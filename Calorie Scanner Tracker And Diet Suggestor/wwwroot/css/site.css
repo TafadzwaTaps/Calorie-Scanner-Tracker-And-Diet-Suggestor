@@ -21,4 +21,20 @@ body {
   margin-bottom: 60px;
 }
 
+.alert {
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+    transition: opacity 0.5s ease-in-out;
+}
 
+.alert-success {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.footer {
+    margin-top: 300px;
+}
