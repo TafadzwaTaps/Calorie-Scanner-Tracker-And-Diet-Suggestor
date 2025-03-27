@@ -1,5 +1,19 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿@model Users
+
+<h2>Settings</h2>
+
+<form method="post" asp-action="UpdateSettings">
+    <label>Email:</label>
+    <input type="email" asp-for="Email" required>
+
+    <label>Phone:</label>
+    <input type="text" asp-for="Phone">
+
+    <label>Notification Preferences:</label>
+    <select asp-for="NotificationPreference">
+        <option value="Email">Email</option>
+        <option value="SMS">SMS</option>
+    </select>
+
+    <button type="submit">Save Changes</button>
+</form>

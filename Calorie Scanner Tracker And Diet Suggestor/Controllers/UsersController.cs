@@ -1,5 +1,6 @@
 ﻿using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Models;
+using Google.Apis.Drive.v3.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,14 @@ public class UsersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("Username,Email,PasswordHash,Role")] Users users)
     {
+        if (string.IsNullOrWhiteSpace(users.Email) || string.IsNullOrWhiteSpace(users.PasswordHash))
+        {
+            return BadRequest("Email and Password are required.");
+        }
+
+        // ✅ Hash the password before storing
+        users.PasswordHash = BCrypt.Net.BCrypt.HashPassword(users.PasswordHash);
+
         if (ModelState.IsValid)
         {
             _context.Add(users);

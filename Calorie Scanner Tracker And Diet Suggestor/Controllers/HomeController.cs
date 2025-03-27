@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 {
@@ -30,11 +31,14 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View();
         }
 
+
+        [Authorize]
         public IActionResult HomePage(string token)
         {
             ViewBag.Token = token;  // Optionally pass it to the view
             return View();
         }
+
 
         public IActionResult AboutUs()
         {
@@ -50,6 +54,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         {
             return View();
         }
+
 
         public async Task<IActionResult> Account()
         {
@@ -73,15 +78,42 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View(user);
         }
 
-        public IActionResult Inbox()
+
+        [Authorize]
+        public async Task<IActionResult> Inbox()
         {
-            return View();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["ErrorMessage"] = "Please log in to access your inbox.";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            // Fetch messages where the user is the recipient
+            var messages = await _context.Messages
+                .Where(m => m.ReceiverId == int.Parse(userId))
+                .OrderByDescending(m => m.SentAt)
+                .ToListAsync();
+
+            return View(messages);
         }
 
-        public IActionResult Settings()
+        [Authorize]
+        public async Task<IActionResult> Settings()
         {
-            return View();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["ErrorMessage"] = "Please log in to access settings.";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var user = await _context.Users.FindAsync(int.Parse(userId));
+            if (user == null) return NotFound();
+
+            return View(user);
         }
+
 
         public async Task<IActionResult> Logout()
         {

@@ -203,6 +203,44 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View("Index", meals);
         }
 
+        [HttpPost]
+        [Route("CreateAjax")]
+        public async Task<IActionResult> CreateAjax([FromBody] MealTrackerRequest mealData)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Json(new { success = false, message = "User not authenticated." });
+            }
+
+            int userId = int.Parse(userIdClaim);
+
+            // Check if the meal exists
+            var meal = await _context.Meals.FindAsync(mealData.MealId);
+            if (meal == null)
+            {
+                return Json(new { success = false, message = "Meal not found." });
+            }
+
+            // Add meal to FoodLogs
+            var foodLog = new FoodLog
+            {
+                MealId = meal.Id,
+                UserId = userId,
+                DateLogged = DateTime.UtcNow
+            };
+
+            _context.FoodLogs.Add(foodLog);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Meal added to tracker!" });
+        }
+
+        public class MealTrackerRequest
+        {
+            public int MealId { get; set; }
+        }
     }
 }
  

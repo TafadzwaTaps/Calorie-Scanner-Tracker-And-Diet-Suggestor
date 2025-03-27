@@ -45,12 +45,36 @@
                             <h3>@meal.Name</h3>
                             <p>Calories: <strong>@meal.Calories kcal</strong></p>
                             <p>Protein: <strong>@meal.Protein g</strong> | Carbs: <strong>@meal.Carbs g</strong> | Fats: <strong>@meal.Fats g</strong></p>
-                            <button class="btn btn-primary">Add to Tracker</button>
+                            <button class="btn btn-primary" onclick="addToTracker(@meal.Id)">Add to Tracker</button>
                         </div>
                     </div>
                 </div>
             }
         </div>
+
     </div>
 </body>
 </html>
+
+<script>
+    function addToTracker(mealId) {
+        fetch('/FoodLogs/CreateAjax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ mealId: mealId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Meal added to tracker!");
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+        });
+    }
+</script>

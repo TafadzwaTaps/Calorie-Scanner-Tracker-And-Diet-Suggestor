@@ -1,0 +1,30 @@
+﻿@model IEnumerable<Message>
+
+<h2>Your Inbox</h2>
+
+@if (!Model.Any())
+{
+    <p>No messages yet.</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>From</th>
+                <th>Message</th>
+                <th>Sent At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var msg in Model)
+            {
+                <tr>
+                    <td>@msg.Sender.Username</td>
+                    <td>@msg.Content</td>
+                    <td>@msg.SentAt.ToString("g")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

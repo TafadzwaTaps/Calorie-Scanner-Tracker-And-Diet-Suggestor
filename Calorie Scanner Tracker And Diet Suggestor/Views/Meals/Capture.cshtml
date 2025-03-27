@@ -1,5 +1,6 @@
 ﻿<video id="video" autoplay></video>
 <button id="capture">Capture</button>
+<p id="captureMessage" style="color: green; display: none;">Image captured successfully!</p>
 <canvas id="canvas" style="display:none;"></canvas>
 <img id="photo" style="display:none;" />
 
@@ -14,6 +15,7 @@
     const captureBtn = document.getElementById("capture");
     const uploadForm = document.getElementById("uploadForm");
     const imageDataInput = document.getElementById("imageData");
+    const captureMessage = document.getElementById("captureMessage");
 
     // Access Camera
     navigator.mediaDevices.getUserMedia({ video: true })
@@ -28,6 +30,13 @@
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageDataURL = canvas.toDataURL("image/png");
         imageDataInput.value = imageDataURL; // Send image data as Base64
+
+        captureMessage.style.display = "block";
+
+        // Hide message after 3 seconds
+        setTimeout(() => {
+            captureMessage.style.display = "none";
+        }, 3000);
     });
 
     // Submit Image

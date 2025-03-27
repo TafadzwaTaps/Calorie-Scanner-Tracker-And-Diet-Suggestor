@@ -252,6 +252,9 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 return StatusCode(500, new { message = "Error uploading image", error = ex.Message });
             }
         }
-
+        public IActionResult Capture()
+        {
+            return View();
+        }
     }
 }

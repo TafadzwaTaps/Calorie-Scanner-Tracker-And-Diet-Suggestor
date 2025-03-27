@@ -26,8 +26,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddGoogle(googleOptions =>
     {
         var googleAuth = builder.Configuration.GetSection("Authentication:Google");
-        //googleOptions.ClientId = googleAuth["ClientId"];
-        //googleOptions.ClientSecret = googleAuth["ClientSecret"];
+        googleOptions.ClientId = googleAuth["ClientId"];
+        googleOptions.ClientSecret = googleAuth["ClientSecret"];
         googleOptions.CallbackPath = "/auth/google-response";  // This should match the redirect URI
     })
     .AddFacebook(facebookOptions =>
