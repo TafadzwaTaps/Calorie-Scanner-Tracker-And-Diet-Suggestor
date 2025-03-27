@@ -9,7 +9,7 @@
         public string Allergies { get; set; }
         public string MealPreferences { get; set; }
 
-        public Users User { get; set; }
+        public User User { get; set; }
 
         public UserPreferences()
         {

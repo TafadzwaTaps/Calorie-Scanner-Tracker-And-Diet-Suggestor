@@ -21,7 +21,7 @@ public class UsersController : Controller
     [Route("")]
     public async Task<IActionResult> Index()
     {
-        return View(await _context.Users.ToListAsync());
+        return View(await _context.User.ToListAsync());
     }
 
     [HttpGet("{id}")] // Explicitly defining the ID in the route
@@ -29,7 +29,7 @@ public class UsersController : Controller
     {
         if (id == null) return NotFound();
 
-        var user = await _context.Users.FirstOrDefaultAsync(m => m.Id == id);
+        var user = await _context.User.FirstOrDefaultAsync(m => m.Id == id);
         if (user == null) return NotFound();
 
         return View(user);
@@ -43,7 +43,7 @@ public class UsersController : Controller
 
     [HttpPost("Create")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Username,Email,PasswordHash,Role")] Users users)
+    public async Task<IActionResult> Create([Bind("Username,Email,PasswordHash,Role")] Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.User users)
     {
         if (string.IsNullOrWhiteSpace(users.Email) || string.IsNullOrWhiteSpace(users.PasswordHash))
         {
@@ -67,7 +67,7 @@ public class UsersController : Controller
     {
         if (id == null) return NotFound();
 
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.User.FindAsync(id);
         if (user == null) return NotFound();
 
         return View(user);
@@ -75,7 +75,7 @@ public class UsersController : Controller
 
     [HttpPost("Edit/{id}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Username,Email,PasswordHash,Role")] Users users)
+    public async Task<IActionResult> Edit(int id, [Bind("Username,Email,PasswordHash,Role")] Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.User users)
     {
         if (id != users.Id) return NotFound();
 
@@ -88,7 +88,7 @@ public class UsersController : Controller
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!_context.Users.Any(e => e.Id == users.Id)) return NotFound();
+                if (!_context.User.Any(e => e.Id == users.Id)) return NotFound();
                 else throw;
             }
             return RedirectToAction(nameof(Index));
@@ -101,7 +101,7 @@ public class UsersController : Controller
     {
         if (id == null) return NotFound();
 
-        var user = await _context.Users.FirstOrDefaultAsync(m => m.Id == id);
+        var user = await _context.User.FirstOrDefaultAsync(m => m.Id == id);
         if (user == null) return NotFound();
 
         return View(user);
@@ -111,10 +111,10 @@ public class UsersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.User.FindAsync(id);
         if (user != null)
         {
-            _context.Users.Remove(user);
+            _context.User.Remove(user);
             await _context.SaveChangesAsync();
         }
         return RedirectToAction(nameof(Index));
@@ -124,7 +124,7 @@ public class UsersController : Controller
     public async Task<IActionResult> Profile()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _context.User.FindAsync(userId);
 
         if (user == null) return NotFound();
 
@@ -135,7 +135,7 @@ public class UsersController : Controller
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AdminDashboard()
     {
-        var users = await _context.Users.ToListAsync();
+        var users = await _context.User.ToListAsync();
         return View(users);
     }
 
@@ -143,7 +143,7 @@ public class UsersController : Controller
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> SetRole(int id, string role)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.User.FindAsync(id);
         if (user == null) return NotFound();
 
         if (role != "Admin" && role != "User") return BadRequest("Invalid role.");

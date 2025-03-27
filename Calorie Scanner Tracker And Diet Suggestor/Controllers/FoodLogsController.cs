@@ -66,7 +66,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [Route("Create")]
         public async Task<IActionResult> Create()
         {
-            ViewBag.Users = new SelectList(await _context.Users.ToListAsync(), "Id", "Username");
+            ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Username");
             ViewBag.Meals = new SelectList(await _context.Meals.ToListAsync(), "Id", "Name");
             return View();
         }

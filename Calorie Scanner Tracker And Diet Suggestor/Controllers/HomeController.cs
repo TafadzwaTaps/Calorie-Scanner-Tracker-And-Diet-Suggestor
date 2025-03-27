@@ -69,7 +69,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 return BadRequest("Invalid user ID.");
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await _context.User.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
             {
                 return NotFound("User not found.");
@@ -82,8 +82,9 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [Authorize]
         public async Task<IActionResult> Inbox()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
+            var username = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            if (username == null)
             {
                 TempData["ErrorMessage"] = "Please log in to access your inbox.";
                 return RedirectToAction("Login", "Auth");
@@ -91,8 +92,8 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             // Fetch messages where the user is the recipient
             var messages = await _context.Messages
-                .Where(m => m.ReceiverId == int.Parse(userId))
-                .OrderByDescending(m => m.SentAt)
+                .Where(m => m.ReceiverId == username)
+                .OrderByDescending(m => m.Timestamp)
                 .ToListAsync();
 
             return View(messages);
@@ -108,12 +109,43 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 return RedirectToAction("Login", "Auth");
             }
 
-            var user = await _context.Users.FindAsync(int.Parse(userId));
-            if (user == null) return NotFound();
+            var settings = await _context.UserSettings.FirstOrDefaultAsync(s => s.UserId == int.Parse(userId));
+            if (settings == null)
+            {
+                settings = new UserSettings { UserId = int.Parse(userId) };
+                _context.UserSettings.Add(settings);
+                await _context.SaveChangesAsync();
+            }
 
-            return View(user);
+            return View(settings);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> UpdateSettings(UserSettings updatedSettings)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var settings = await _context.UserSettings.FirstOrDefaultAsync(s => s.UserId == int.Parse(userId));
+            if (settings == null) return NotFound();
+
+            settings.DailyCalorieTarget = updatedSettings.DailyCalorieTarget;
+            settings.MealSchedule = updatedSettings.MealSchedule;
+            settings.MealReminders = updatedSettings.MealReminders;
+            settings.Language = updatedSettings.Language;
+            settings.WaterGlassCapacity = updatedSettings.WaterGlassCapacity;
+            settings.MenuDisplaySettings = updatedSettings.MenuDisplaySettings;
+            settings.NavigationAppearance = updatedSettings.NavigationAppearance;
+            settings.Theme = updatedSettings.Theme;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Settings updated successfully.";
+            return RedirectToAction("Settings");
+        }
 
         public async Task<IActionResult> Logout()
         {

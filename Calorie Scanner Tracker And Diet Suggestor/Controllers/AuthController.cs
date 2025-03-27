@@ -22,7 +22,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Register(Users user)
+        public async Task<IActionResult> Register(User user)
         {
             if (string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrWhiteSpace(user.PasswordHash))
             {
@@ -32,7 +32,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             // ✅ Hash the password before storing
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
 
-            _context.Users.Add(user);
+            _context.User.Add(user);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Login");
@@ -44,7 +44,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(Users user)
+        public async Task<IActionResult> Login(User user)
         {
             Console.WriteLine($"[DEBUG] Email: {user.Email}");
             Console.WriteLine($"[DEBUG] Password: {user.Password}"); // Check if null
@@ -55,7 +55,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 return View();
             }
 
-            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
+            var dbUser = await _context.User.FirstOrDefaultAsync(u => u.Email == user.Email);
 
             if (dbUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, dbUser.PasswordHash))
             {
@@ -118,11 +118,11 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             }
 
             // Check if user exists in the database
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _context.User.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
                 // Register new user
-                user = new Users
+                user = new User
                 {
                     Email = email,
                     Username = name ?? "Google User",
@@ -130,7 +130,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                     Role = "User"
                 };
 
-                _context.Users.Add(user);
+                _context.User.Add(user);
                 await _context.SaveChangesAsync();
             }
 

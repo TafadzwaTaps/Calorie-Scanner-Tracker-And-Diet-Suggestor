@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
 {
-    public class Users
+    public class User
     {
         public int Id { get; set; }
         [Required]
@@ -17,8 +17,9 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
         [Required]
         public string Role { get; set; } = "User"; // Default role
         public List<FoodLog>? FoodLogs { get; set; }
-
-        public Users()
+        public UserPreferences? UserPreferences { get; set; }
+        public UserSettings? UserSettings { get; set; }
+        public User()
         {
             
         }
