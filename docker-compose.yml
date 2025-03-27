@@ -15,7 +15,7 @@ services:
     networks:
       - app_network  # Connect app to custom network
 
-  db:  # Ensure the db service is correctly placed under services
+  db:
     image: rathious23/trtserver:latest
     container_name: TmxServerNew
     environment:

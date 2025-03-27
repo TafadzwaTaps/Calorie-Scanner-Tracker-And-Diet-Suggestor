@@ -1,0 +1,47 @@
+﻿<video id="video" autoplay></video>
+<button id="capture">Capture</button>
+<canvas id="canvas" style="display:none;"></canvas>
+<img id="photo" style="display:none;" />
+
+<form id="uploadForm" method="post" enctype="multipart/form-data">
+    <input type="hidden" id="imageData" name="imageData" />
+    <button type="submit">Upload</button>
+</form>
+
+<script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const captureBtn = document.getElementById("capture");
+    const uploadForm = document.getElementById("uploadForm");
+    const imageDataInput = document.getElementById("imageData");
+
+    // Access Camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream)
+        .catch(err => console.error("Camera access error: ", err));
+
+    // Capture Image
+    captureBtn.addEventListener("click", () => {
+        const context = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageDataURL = canvas.toDataURL("image/png");
+        imageDataInput.value = imageDataURL; // Send image data as Base64
+    });
+
+    // Submit Image
+    uploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append("imageData", imageDataInput.value);
+
+        const response = await fetch("/Meals/UploadImage", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+        alert(result.message);
+    });
+</script>

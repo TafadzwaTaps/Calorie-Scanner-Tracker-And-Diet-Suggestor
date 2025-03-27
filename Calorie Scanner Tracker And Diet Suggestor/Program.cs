@@ -9,7 +9,11 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<CalorieTrackerContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("CalorieTrackerConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("CalorieTrackerConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null) // 🔥 Add retry policy
+    )
+);
 
 // ✅ Use Cookie Authentication (for session-based login)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -21,8 +25,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     })
     .AddGoogle(googleOptions =>
     {
-        googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
-        googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+        var googleAuth = builder.Configuration.GetSection("Authentication:Google");
+        //googleOptions.ClientId = googleAuth["ClientId"];
+        //googleOptions.ClientSecret = googleAuth["ClientSecret"];
+        googleOptions.CallbackPath = "/auth/google-response";  // This should match the redirect URI
     })
     .AddFacebook(facebookOptions =>
     {

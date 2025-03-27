@@ -183,9 +183,75 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View(meal);
         }
 
-        public IActionResult Meals()
+        public async Task<IActionResult> Meals([FromQuery] string type = "breakfast", [FromQuery] int? page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? minCalories = null, [FromQuery] int? maxCalories = null, [FromQuery] string? sortBy = null)
         {
-            return View();
+            if (string.IsNullOrEmpty(type))
+            {
+                return NotFound("Meal type not found. Use 'breakfast', 'lunch', or 'dinner'.");
+            }
+
+            var mealsQuery = _context.Meals.Where(m => m.MealType.ToLower() == type.ToLower());
+
+            // Apply filtering by calories if provided
+            if (minCalories.HasValue)
+            {
+                mealsQuery = mealsQuery.Where(m => m.Calories >= minCalories.Value);
+            }
+            if (maxCalories.HasValue)
+            {
+                mealsQuery = mealsQuery.Where(m => m.Calories <= maxCalories.Value);
+            }
+
+            // Apply sorting if specified
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                mealsQuery = sortBy.ToLower() switch
+                {
+                    "calories" => mealsQuery.OrderBy(m => m.Calories),
+                    "protein" => mealsQuery.OrderBy(m => m.Protein),
+                    "carbs" => mealsQuery.OrderBy(m => m.Carbs),
+                    "fats" => mealsQuery.OrderBy(m => m.Fats),
+                    _ => mealsQuery.OrderBy(m => m.Name), // Default sorting by name
+                };
+            }
+
+            // Apply pagination
+            var meals = await mealsQuery.Skip((page.Value - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            if (meals == null || !meals.Any())
+            {
+                return NotFound($"No meals found for {type}.");
+            }
+
+            ViewData["MealType"] = type;
+            return View(meals);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> UploadImage([FromForm] string imageData)
+        {
+            if (string.IsNullOrEmpty(imageData))
+                return BadRequest(new { message = "No image data received" });
+
+            try
+            {
+                // Convert Base64 string to byte array
+                var base64Data = imageData.Split(',')[1];
+                var imageBytes = Convert.FromBase64String(base64Data);
+
+                // Define storage path
+                var filePath = Path.Combine("wwwroot/uploads", $"{Guid.NewGuid()}.png");
+
+                // Save image to server
+                await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+
+                return Ok(new { message = "Image uploaded successfully", filePath });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error uploading image", error = ex.Message });
+            }
+        }
+
     }
 }
