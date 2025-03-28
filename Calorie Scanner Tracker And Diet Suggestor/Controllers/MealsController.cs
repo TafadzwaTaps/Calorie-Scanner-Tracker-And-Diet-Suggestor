@@ -1,10 +1,8 @@
 ﻿using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 {
@@ -183,6 +181,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View(meal);
         }
 
+        [Authorize]
         public async Task<IActionResult> Meals([FromQuery] string type = "breakfast", [FromQuery] int? page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? minCalories = null, [FromQuery] int? maxCalories = null, [FromQuery] string? sortBy = null)
         {
             if (string.IsNullOrEmpty(type))

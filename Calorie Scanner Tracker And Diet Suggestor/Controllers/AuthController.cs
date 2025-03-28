@@ -66,6 +66,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
+        new Claim(ClaimTypes.Name, dbUser.Username),
         new Claim(ClaimTypes.Email, dbUser.Email),
         new Claim(ClaimTypes.Role, dbUser.Role)
     };
@@ -73,6 +74,8 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            HttpContext.Session.SetString("Username", dbUser.Username ?? string.Empty);
 
             return RedirectToAction("HomePage", "Home");
         }
@@ -166,6 +169,66 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        // POST: /Account/ForgotPassword
+        [HttpPost]
+        public IActionResult ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = _context.User.SingleOrDefault(u => u.Email == model.Email);
+                if (user != null)
+                {
+                    // Redirect to ResetPassword page with user's email as a parameter
+                    return RedirectToAction("ResetPassword", "Account", new { email = model.Email });
+                }
+                ModelState.AddModelError("", "User with the specified email does not exist.");
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string email)
+        {
+            var model = new ResetPasswordViewModel { Email = email };
+            return View(model);
+        }
+
+        [HttpPost]
+        public IActionResult ResetPassword(ResetPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = _context.User.SingleOrDefault(u => u.Email == model.Email);
+                if (user != null)
+                {
+                    user.PasswordHash = (model.Password);
+                    _context.SaveChanges();
+                    return RedirectToAction("ResetPasswordConfirmation");
+                }
+                ModelState.AddModelError("", "User with the specified email does not exist.");
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult ResetPasswordConfirmation()
+        {
+            return View();
+        }
+
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
         public IActionResult Questionnaire(int userId)
         {
             var userPreferences = new UserPreferences { UserId = userId };
@@ -185,6 +248,5 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             }
             return View(preferences);
         }
-
     }
 }

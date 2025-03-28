@@ -1,30 +1,34 @@
 ﻿@model IEnumerable<Message>
 
-<h2>Your Inbox</h2>
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Your Inbox</h2>
 
-@if (!Model.Any())
-{
-    <p>No messages yet.</p>
-}
-else
-{
-    <table>
-        <thead>
-            <tr>
-                <th>From</th>
-                <th>Message</th>
-                <th>Sent At</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var msg in Model)
-            {
-                <tr>
-                    <td>@msg.SenderId</td>
-                    <td>@msg.Content</td>
-                    <td>@msg.Timestamp</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">No messages yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover shadow-sm">
+                <thead class="table-primary">
+                    <tr>
+                        <th>From</th>
+                        <th>Message</th>
+                        <th>Sent At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var msg in Model)
+                    {
+                        <tr>
+                            <td>@msg.SenderId</td>
+                            <td>@msg.Content</td>
+                            <td>@msg.Timestamp.ToString("MMMM dd, yyyy hh:mm tt")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

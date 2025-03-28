@@ -1,7 +1,5 @@
 ﻿using Calorie_Scanner_Tracker_And_Diet_Suggestor.Models;
-using Google.Apis.Drive.v3.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Database
 {

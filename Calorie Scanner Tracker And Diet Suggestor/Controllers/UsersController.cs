@@ -19,6 +19,7 @@ public class UsersController : Controller
 
     [HttpGet] // Explicitly defining HTTP method
     [Route("")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Index()
     {
         return View(await _context.User.ToListAsync());
@@ -43,6 +44,7 @@ public class UsersController : Controller
 
     [HttpPost("Create")]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([Bind("Username,Email,PasswordHash,Role")] Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.User users)
     {
         if (string.IsNullOrWhiteSpace(users.Email) || string.IsNullOrWhiteSpace(users.PasswordHash))

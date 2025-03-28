@@ -78,8 +78,6 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View(user);
         }
 
-
-        [Authorize]
         public async Task<IActionResult> Inbox()
         {
             var username = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;

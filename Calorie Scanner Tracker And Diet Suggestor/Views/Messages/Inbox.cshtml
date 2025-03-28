@@ -1,5 +1,81 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model IEnumerable<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Message>
+
 @{
-}
+    ViewData["Title"] = "Inbox";
+    string search = ViewData["Search"] as string;
+    int currentPage = Convert.ToInt32(ViewData["CurrentPage"] ?? 1);
+    int totalPages = Convert.ToInt32(ViewData["TotalPages"] ?? 1);
+}CS
+
+<style>
+    .footer {
+        margin-top: 300px;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Inbox</h2>
+            <form class="form-inline" method="get" action="@Url.Action("Inbox", "Message")">
+                <input type="text" name="search" class="form-control mr-2" placeholder="Search messages" value="@search" />
+                <button type="submit" class="btn btn-light">Search</button>
+            </form>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sender</th>
+                                <th>Content</th>
+                                <th>Received At</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var message in Model)
+                            {
+                                <tr class="@(!message.IsRead ? "table-warning" : "")">
+                                    <td>@message.SenderId</td>
+                                    <td>@message.Content</td>
+                                    <td>@message.Timestamp.ToString("MMMM dd, yyyy hh:mm tt")</td>
+                                    <td>@(message.IsRead ? "<span class='text-success'>Read</span>" : "<span class='text-danger'>Unread</span>")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <p class="mb-0"><i class="fas fa-inbox"></i> No messages found.</p>
+                </div>
+            }
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <nav>
+                <ul class="pagination mb-0">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="?search=@search&page=@(currentPage - 1)">Previous</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(currentPage == i ? "active" : "")">
+                            <a class="page-link" href="?search=@search&page=@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="?search=@search&page=@(currentPage + 1)">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            <a href="@Url.Action("SendMessage", "Message")" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i> Send a Message
+            </a>
+        </div>
+    </div>
+</div>
