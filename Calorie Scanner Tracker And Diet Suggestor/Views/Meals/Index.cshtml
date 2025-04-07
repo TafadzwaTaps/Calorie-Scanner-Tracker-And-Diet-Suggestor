@@ -1,106 +1,159 @@
-﻿@model List<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Meals>
+﻿@model IEnumerable<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Meals>
 @{
-    ViewData["Title"] = "Meals for " + ViewData["MealType"];
+    ViewData["Title"] = "Meals";
+    var mealType = ViewData["MealType"]?.ToString()?.ToLower() ?? "breakfast";
 }
 
-<style>
-    footer {
-        margin-top: 900px; /* Pushes footer to the bottom */
-    }
-</style>
+<h2 class="mb-4 text-center text-muted">Meal Type: <span class="text-primary">@mealType.ToUpper()</span></h2>
 
-<div class="container mt-5">
-    <h1 class="text-center mb-4">Meals for <span class="text-primary">@ViewData["MealType"]</span></h1>
-    <p class="text-center mb-5">Here are some meal options for @ViewData["MealType"].</p>
+<div class="text-center mb-4">
+    <!-- Title Section -->
+    <h1 class="fs-3 mb-2">Meals for <span class="text-primary">@ViewData["MealType"]</span></h1>
+    <p class="text-muted fs-6">Here are some meal options for your selected meal type.</p>
+    
+    <!-- Meal Type Buttons Section -->
+    <div class="btn-group" role="group">
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="breakfast" class="btn btn-info">
+            ☀️ Breakfast
+        </a>
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="lunch" class="btn btn-warning">
+            🍽 Lunch
+        </a>
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="dinner" class="btn btn-success">
+            🌙 Dinner
+        </a>
+    </div>
+</div>
 
-    <!-- Meal Type Buttons -->
-    <div class="text-center mb-4">
-        <div class="btn-group" role="group">
-            <a asp-controller="Meals" asp-action="Index" asp-route-type="breakfast" class="btn btn-info">☀️ Breakfast</a>
-            <a asp-controller="Meals" asp-action="Index" asp-route-type="lunch" class="btn btn-warning">🍽 Lunch</a>
-            <a asp-controller="Meals" asp-action="Index" asp-route-type="dinner" class="btn btn-success">🌙 Dinner</a>
-        </div>
+
+<!-- Search and Filters Form -->
+<form method="get" asp-action="Index" class="d-flex flex-column flex-sm-row justify-content-between gap-4 mb-5">
+    <div class="d-flex gap-3 w-100">
+        <input type="hidden" name="type" value="@mealType" />
+        <input class="form-control" type="text" name="searchTerm" placeholder="Search meals..." />
+        <select class="form-select" name="sortBy">
+            <option value="">Sort By</option>
+            <option value="calories">Calories</option>
+            <option value="protein">Protein</option>
+            <option value="carbs">Carbs</option>
+            <option value="fats">Fats</option>
+        </select>
     </div>
 
-    <!-- Meal Cards -->
+    <div class="d-flex gap-3 w-100">
+        <input type="number" name="minCalories" class="form-control" placeholder="Min Cal" />
+        <input type="number" name="maxCalories" class="form-control" placeholder="Max Cal" />
+        <button type="submit" class="btn btn-primary btn-lg w-100">Apply</button>
+    </div>
+</form>
+
+
+<p class="text-center"><strong>Total Meals:</strong> @Model.Count()</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center">No meals available for this type.</div>
+}
+else
+{
     <div class="row row-cols-1 row-cols-md-3 g-4">
         @foreach (var meal in Model)
         {
             <div class="col">
-                <div class="card shadow-sm meal-card h-100">
-                    <div class="card-body">
-                        <h4 class="card-title">@meal.Name</h4>
+                <div class="card shadow-lg rounded-3 h-100">
+                    <img src="https://source.unsplash.com/300x200/?@mealType,healthy" class="card-img-top" alt="Meal" />
+                    <div class="card-body text-center">
+                        <h5 class="card-title">@meal.Name</h5>
                         <p><strong>Calories:</strong> @meal.Calories kcal</p>
                         <p><strong>Protein:</strong> @meal.Protein g | <strong>Carbs:</strong> @meal.Carbs g | <strong>Fats:</strong> @meal.Fats g</p>
-                        <a href="@Url.Action("Index", "PreparationSteps", new { mealId = meal.Id })" class="btn btn-outline-success">View Steps</a>
+                        <div class="d-flex justify-content-center gap-3">
+                            <button class="btn btn-primary btn-sm" onclick="addToTracker(@meal.Id)">Add to Tracker</button>
+                            <button class="btn btn-outline-info btn-sm" onclick="loadPreparationSteps(@meal.Id)">View Steps</button>
+                        </div>
                     </div>
                 </div>
             </div>
         }
     </div>
+}
 
-    <!-- Pagination -->
-    <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-            <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-            <li class="page-item"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">Next</a></li>
-        </ul>
-    </nav>
+<!-- Pagination -->
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+        <li class="page-item"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+    </ul>
+</nav>
 
-    <!-- Filters and Sorting -->
-    <div class="text-center mt-4">
-        <h5>Filter by Calories:</h5>
-        <form method="get" asp-controller="Meals" asp-action="FilterByCalories" class="d-inline-flex">
-            <input type="number" name="minCalories" class="form-control mx-2" placeholder="Min">
-            <input type="number" name="maxCalories" class="form-control mx-2" placeholder="Max">
-            <button type="submit" class="btn btn-primary">Apply</button>
-        </form>
-    </div>
+<!-- Add Meal Options -->
+<div class="text-center mt-4">
+    <a asp-action="PostMeal" class="btn btn-success btn-lg">➕ Add New Meal</a>
+    <a asp-action="Capture" class="btn btn-secondary btn-lg">📸 Capture Meal</a>
+</div>
 
-    <div class="text-center mt-3">
-        <h5>Sort Meals:</h5>
-        <div class="btn-group">
-            <a asp-action="SortMeals" asp-route-sortBy="Calories" asp-route-order="asc" class="btn btn-outline-info">⬇ Calories</a>
-            <a asp-action="SortMeals" asp-route-sortBy="Calories" asp-route-order="desc" class="btn btn-outline-info">⬆ Calories</a>
-            <a asp-action="SortMeals" asp-route-sortBy="Protein" asp-route-order="asc" class="btn btn-outline-info">⬇ Protein</a>
-            <a asp-action="SortMeals" asp-route-sortBy="Protein" asp-route-order="desc" class="btn btn-outline-info">⬆ Protein</a>
+<!-- Total Meals Count -->
+<div class="text-center mt-4">
+    <p><strong>Total meals:</strong> <span class="badge bg-primary">@Model.Count()</span></p>
+</div>
+
+<!-- Preparation Steps Modal -->
+<div class="modal fade" id="prepModal" tabindex="-1" role="dialog" aria-labelledby="prepModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Preparation Steps</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="prepStepsContent">
+                <p>Loading...</p>
+            </div>
         </div>
-    </div>
-
-    <!-- Search and Suggestion -->
-    <div class="text-center mt-4">
-        <form method="get" asp-action="SearchMeals" class="d-flex justify-content-center">
-            <input type="text" name="searchTerm" class="form-control w-50" placeholder="Search meals...">
-            <button type="submit" class="btn btn-primary mx-2"><i class="fas fa-search"></i></button>
-        </form>
-    </div>
-
-    <div class="text-center mt-4">
-        <h5>Suggest Meals:</h5>
-        <form method="get" asp-action="SuggestMeals" class="d-inline-flex">
-            <input type="number" name="maxCalories" class="form-control mx-2" placeholder="Max Calories">
-            <button type="submit" class="btn btn-success">Suggest</button>
-        </form>
-    </div>
-
-    <!-- Add Meal Button -->
-    <div class="text-center mt-4">
-        <a asp-action="PostMeal" class="btn btn-success">➕ Add New Meal</a>
-        <a asp-action="Capture" class="btn btn-secondary">📸 Capture Meal</a>
-    </div>
-
-    <!-- Total Meals Count -->
-    <div class="text-center mt-4">
-        <p><strong>Total meals:</strong> <span class="badge bg-primary">@Model.Count()</span></p>
     </div>
 </div>
 
-<!-- FontAwesome Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+@section Scripts {
+    <script>
+        function loadPreparationSteps(mealId) {
+            fetch(`/Meals/GetMeal/${mealId}`)
+                .then(res => res.json())
+                .then(data => {
+                    const steps = data.preparationSteps;
+                    let html = `<ul>`;
+                    if (steps && steps.length > 0) {
+                        steps.forEach(step => {
+                            html += `<li>${step}</li>`;
+                        });
+                    } else {
+                        html += `<li>No steps available</li>`;
+                    }
+                    html += `</ul>`;
+                    document.getElementById("prepStepsContent").innerHTML = html;
+                    new bootstrap.Modal(document.getElementById("prepModal")).show();
+                });
+        }
 
-<!-- Tooltip Script -->
-<script>
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
-</script>
+        function addToTracker(mealId) {
+            fetch('/FoodLogs/CreateAjax', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mealId: mealId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Meal added to tracker!");
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        }
+
+        // Enable Bootstrap tooltips
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+    </script>
+}

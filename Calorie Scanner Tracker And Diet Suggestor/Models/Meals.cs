@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
 {
@@ -14,6 +15,10 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
         public string? MealType { get; set; } // Breakfast, Lunch, Dinner
 
         public List<PreparationStep> PreparationSteps { get; set; } = new List<PreparationStep>();
+
+        [NotMapped]
+
+        public string ImageUrl { get; set; }
         public Meals()
         {
             

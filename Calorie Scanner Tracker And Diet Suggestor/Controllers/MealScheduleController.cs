@@ -74,7 +74,10 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         public async Task<IActionResult> UpdateMealStatus(int id, [FromBody] string status)
         {
             var mealSchedule = await _context.MealSchedules.FindAsync(id);
-            if (mealSchedule == null) return NotFound();
+            if (mealSchedule == null)
+            {
+                return NotFound(new { success = false, message = "Meal schedule not found." });
+            }
 
             mealSchedule.Status = status;
             await _context.SaveChangesAsync();
@@ -86,7 +89,10 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var mealSchedule = await _context.MealSchedules.FindAsync(id);
-            if (mealSchedule == null) return NotFound();
+            if (mealSchedule == null)
+            {
+                return NotFound(new { success = false, message = "Meal schedule not found." });
+            }
 
             return View(mealSchedule);
         }
@@ -113,7 +119,19 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             return RedirectToAction("Index");
         }
-          
+
+        [HttpGet("SuggestMeals")]
+        public async Task<IActionResult> SuggestMeals(int maxCalories, string dietaryRestrictions)
+        {
+            var meals = await _context.Meals
+                .Where(m => m.Calories <= maxCalories && m.MealType.Contains(dietaryRestrictions))
+                .OrderBy(m => m.Calories) // Optionally order by calories or other metrics
+                .ToListAsync();
+
+            return View("MealSuggestions", meals);
+        }
+
+
         [HttpPost("SendReminder")]
         public async Task<IActionResult> SendMealReminder()
         {

@@ -59,7 +59,18 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("ToggleEaten/{id}")]
+        public async Task<IActionResult> ToggleEaten(int id)
+        {
+            var foodLog = await _context.FoodLogs.FindAsync(id);
+            if (foodLog == null) return NotFound();
 
+            foodLog.IsEaten = !foodLog.IsEaten;  // Toggle the eaten status
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = $"Meal marked as {(foodLog.IsEaten ? "eaten" : "not eaten")}" });
+        }
 
 
         [HttpGet]
