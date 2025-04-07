@@ -66,6 +66,12 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [Route("Create")]
         public async Task<IActionResult> Create()
         {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
             ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Username");
             ViewBag.Meals = new SelectList(await _context.Meals.ToListAsync(), "Id", "Name");
             return View();
@@ -85,11 +91,12 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             if (string.IsNullOrEmpty(userIdClaim))
             {
                 Console.WriteLine("[ERROR] Unauthorized attempt to create food log!");
-                return RedirectToAction("Login", "Account"); // Redirect to login instead of returning 401
+                return RedirectToAction("Login", "Auth"); // Redirect to login instead of returning 401
             }
 
             foodLog.UserId = int.Parse(userIdClaim);
             foodLog.DateLogged = DateTime.UtcNow;
+            foodLog.IsEaten = true; //
 
             if (!ModelState.IsValid)
             {
@@ -99,6 +106,8 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             _context.FoodLogs.Add(foodLog);
             await _context.SaveChangesAsync();
+
+            await SendMealNotificationAsync(foodLog.UserId, foodLog.MealId);
 
             return RedirectToAction(nameof(Dashboard));
         }
@@ -236,6 +245,45 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 
             return Json(new { success = true, message = "Meal added to tracker!" });
         }
+
+        private async Task SendMealNotificationAsync(int userId, int mealId)
+        {
+            var user = await _context.User.FindAsync(userId);
+            if (user == null) return;
+
+            var meal = await _context.Meals.FindAsync(mealId);
+            if (meal == null) return;
+
+            string message = $"You have logged {meal.Name} as eaten.";
+
+            if (user.PushNotifications)
+            {
+                var notification = new Notification
+                {
+                    UserId = userId,
+                    Message = message,
+                    Timestamp = DateTime.UtcNow,
+                    IsRead = false
+                };
+
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+            }
+
+            if (user.EmailNotifications)
+            {
+                await SendEmailNotification(user.Username, message);
+            }
+        }
+
+        private async Task SendEmailNotification(string email, string message)
+        {
+            // Email service integration
+            Console.WriteLine($"Sending email to {email}: {message}");
+            await Task.CompletedTask;
+        }
+
+
 
         public class MealTrackerRequest
         {

@@ -182,49 +182,64 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> Meals([FromQuery] string type = "breakfast", [FromQuery] int? page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? minCalories = null, [FromQuery] int? maxCalories = null, [FromQuery] string? sortBy = null)
+        public async Task<IActionResult> Meals(
+     [FromQuery] string type = "breakfast",
+     [FromQuery] int? page = 1,
+     [FromQuery] int pageSize = 10,
+     [FromQuery] int? minCalories = null,
+     [FromQuery] int? maxCalories = null,
+     [FromQuery] string? sortBy = null)
         {
             if (string.IsNullOrEmpty(type))
-            {
                 return NotFound("Meal type not found. Use 'breakfast', 'lunch', or 'dinner'.");
-            }
 
-            var mealsQuery = _context.Meals.Where(m => m.MealType.ToLower() == type.ToLower());
+            var mealsQuery = _context.Meals.AsQueryable();
 
-            // Apply filtering by calories if provided
-            if (minCalories.HasValue)
-            {
-                mealsQuery = mealsQuery.Where(m => m.Calories >= minCalories.Value);
-            }
-            if (maxCalories.HasValue)
-            {
-                mealsQuery = mealsQuery.Where(m => m.Calories <= maxCalories.Value);
-            }
+            mealsQuery = FilterByMealType(mealsQuery, type);
+            mealsQuery = ApplyCalorieFilters(mealsQuery, minCalories, maxCalories);
+            mealsQuery = ApplySorting(mealsQuery, sortBy);
 
-            // Apply sorting if specified
-            if (!string.IsNullOrEmpty(sortBy))
-            {
-                mealsQuery = sortBy.ToLower() switch
-                {
-                    "calories" => mealsQuery.OrderBy(m => m.Calories),
-                    "protein" => mealsQuery.OrderBy(m => m.Protein),
-                    "carbs" => mealsQuery.OrderBy(m => m.Carbs),
-                    "fats" => mealsQuery.OrderBy(m => m.Fats),
-                    _ => mealsQuery.OrderBy(m => m.Name), // Default sorting by name
-                };
-            }
+            var meals = await ApplyPagination(mealsQuery, page, pageSize).ToListAsync();
 
-            // Apply pagination
-            var meals = await mealsQuery.Skip((page.Value - 1) * pageSize).Take(pageSize).ToListAsync();
-
-            if (meals == null || !meals.Any())
-            {
+            if (!meals.Any())
                 return NotFound($"No meals found for {type}.");
-            }
 
             ViewData["MealType"] = type;
             return View(meals);
         }
+
+        private IQueryable<Meals> FilterByMealType(IQueryable<Meals> query, string type)
+        {
+            return query.Where(m => m.MealType.ToLower() == type.ToLower());
+        }
+
+        private IQueryable<Meals> ApplyCalorieFilters(IQueryable<Meals> query, int? min, int? max)
+        {
+            if (min.HasValue)
+                query = query.Where(m => m.Calories >= min.Value);
+            if (max.HasValue)
+                query = query.Where(m => m.Calories <= max.Value);
+            return query;
+        }
+
+        private IQueryable<Meals> ApplySorting(IQueryable<Meals> query, string? sortBy)
+        {
+            return sortBy?.ToLower() switch
+            {
+                "calories" => query.OrderBy(m => m.Calories),
+                "protein" => query.OrderBy(m => m.Protein),
+                "carbs" => query.OrderBy(m => m.Carbs),
+                "fats" => query.OrderBy(m => m.Fats),
+                _ => query.OrderBy(m => m.Name),
+            };
+        }
+
+        private IQueryable<Meals> ApplyPagination(IQueryable<Meals> query, int? page, int pageSize)
+        {
+            int pageNumber = page ?? 1;
+            return query.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> UploadImage([FromForm] string imageData)

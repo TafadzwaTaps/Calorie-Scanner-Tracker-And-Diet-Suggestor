@@ -1,0 +1,109 @@
+﻿@model List<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.MealSchedule>
+
+@{
+    ViewData["Title"] = "Meal Schedule";
+}
+
+<h2>Meal Schedule</h2>
+
+<!-- FullCalendar -->
+<div id="calendar"></div>
+
+<!-- Schedule Meal Button -->
+<button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#scheduleMealModal">
+    Schedule a Meal
+</button>
+
+<!-- Schedule Meal Modal -->
+<div class="modal fade" id="scheduleMealModal" tabindex="-1" aria-labelledby="scheduleMealModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scheduleMealModalLabel">Schedule a Meal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleMealForm">
+                    <div class="mb-3">
+                        <label for="mealId" class="form-label">Select Meal</label>
+                        <select class="form-select" id="mealId">
+                            @foreach (var meal in ViewBag.Meals)
+                            {
+                                        <option value="@meal.Id">@meal.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="scheduledDate" class="form-label">Scheduled Date & Time</label>
+                        <input type="datetime-local" class="form-control" id="scheduledDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Schedule Meal</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var calendarEl = document.getElementById('calendar');
+
+                    var calendar = new FullCalendar.Calendar(calendarEl, {
+                        initialView: 'dayGridMonth',
+                        selectable: true,
+                        events: function (fetchInfo, successCallback, failureCallback) {
+                            $.get('/MealSchedule/UserMeals', { 
+                                startDate: fetchInfo.startStr, 
+                                endDate: fetchInfo.endStr 
+                            }, function (data) {
+                                let events = data.map(meal => ({
+                                    id: meal.id,
+                                    title: meal.meal.name,
+                                    start: meal.scheduledDate,
+                                    extendedProps: {
+                                        status: meal.status
+                                    }
+                                }));
+                                successCallback(events);
+                            }).fail(failureCallback);
+                        },
+                        eventClick: function (info) {
+                            let mealId = info.event.id;
+                            let status = info.event.extendedProps.status;
+
+                            let newStatus = confirm("Mark this meal as 'Eaten'?") ? "Eaten" : "Skipped";
+                            updateStatus(mealId, newStatus, info.event);
+                        }
+                    });
+
+                    calendar.render();
+
+                    function updateStatus(mealId, status, event) {
+                        $.ajax({
+                            url: `/MealSchedule/UpdateStatus/${mealId}`,
+                            type: 'PUT',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ status }),
+                            success: function () {
+                                alert('Meal status updated successfully!');
+                                event.setProp('backgroundColor', status === "Eaten" ? 'green' : 'red');
+                            }
+                        });
+                    }
+
+                    $('#scheduleMealForm').submit(function (event) {
+                        event.preventDefault();
+                        let mealId = $('#mealId').val();
+                        let scheduledDate = $('#scheduledDate').val();
+
+                        $.post('/MealSchedule/Schedule', JSON.stringify({ MealId: mealId, ScheduledDate: scheduledDate }), function () {
+                            $('#scheduleMealModal').modal('hide');
+                            calendar.refetchEvents();
+                        }).fail(function (xhr) {
+                            alert('Error scheduling meal: ' + xhr.responseText);
+                        });
+                    });
+                });
+            </script>
+}

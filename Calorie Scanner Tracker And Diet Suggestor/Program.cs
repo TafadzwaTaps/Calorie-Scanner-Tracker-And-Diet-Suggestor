@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
 using Microsoft.EntityFrameworkCore;
+using Calorie_Scanner_Tracker_And_Diet_Suggestor.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,12 +29,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         googleOptions.ClientId = googleAuth["ClientId"];
         googleOptions.ClientSecret = googleAuth["ClientSecret"];
         googleOptions.CallbackPath = "/auth/google-response";  // This should match the redirect URI
-    })
-    .AddFacebook(facebookOptions =>
-    {
-        facebookOptions.AppId = builder.Configuration["Authentication:Facebook:AppId"];
-        facebookOptions.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"];
     });
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllersWithViews();

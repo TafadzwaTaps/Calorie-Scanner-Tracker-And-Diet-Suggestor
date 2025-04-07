@@ -19,6 +19,8 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Database
         public DbSet<Models.User> User { get; set; }
         public DbSet<UserPreferences> UserPreferences { get; set; }
         public DbSet<UserSettings> UserSettings { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<MealSchedule> MealSchedules { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -36,6 +38,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Database
             modelBuilder.Entity<UserPreferences>().HasKey(t => t.Id);
             modelBuilder.Entity<UserSettings>().HasKey(t => t.Id);
             modelBuilder.Entity<Message>().HasKey(t => t.MessageId);
+            modelBuilder.Entity<MealSchedule>().HasKey(t => t.Id);
         }
     }
 }

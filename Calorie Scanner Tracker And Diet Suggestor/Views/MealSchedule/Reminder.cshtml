@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Meal Reminders";
+}
+
+<h2>Request a Meal Reminder</h2>
+
+<button id="sendReminderBtn" class="btn btn-warning">Send Reminder</button>
+
+@section Scripts {
+    <script>
+        $('#sendReminderBtn').click(function () {
+            $.post('/MealSchedule/SendReminder', function (response) {
+                alert(response.message);
+            });
+        });
+    </script>
+}

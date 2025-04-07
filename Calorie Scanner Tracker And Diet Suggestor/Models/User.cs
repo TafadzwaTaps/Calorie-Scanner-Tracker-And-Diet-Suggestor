@@ -19,6 +19,11 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
         public List<FoodLog>? FoodLogs { get; set; }
         public UserPreferences? UserPreferences { get; set; }
         public UserSettings? UserSettings { get; set; }
+       
+        [NotMapped]              
+        public bool EmailNotifications { get; set; }
+        [NotMapped]
+        public bool PushNotifications { get; set; }
         public User()
         {
             

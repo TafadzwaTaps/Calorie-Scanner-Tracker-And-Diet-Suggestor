@@ -8,7 +8,7 @@
         public int MealId { get; set; }
         public Meals? Meal { get; set; }
         public DateTime DateLogged { get; set; }
-
+        public bool IsEaten { get; set; } = false;
         public FoodLog()
         {
             

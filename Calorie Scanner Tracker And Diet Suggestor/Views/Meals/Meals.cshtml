@@ -16,31 +16,42 @@
         <h1 class="text-center">Available Meals for <span class="text-primary">@mealType</span></h1>
         <p class="text-center">Browse meals and select one to track.</p>
 
-        <!-- Filter Options -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <label>Calories</label>
-                <input type="number" name="minCalories" class="form-control" placeholder="Min Calories">
-                <input type="number" name="maxCalories" class="form-control mt-2" placeholder="Max Calories">
+        <!-- ✅ Filter Form -->
+        <form method="get" class="mb-4">
+            <input type="hidden" name="type" value="@mealType.ToLower()" />
+            <div class="row">
+                <div class="col-md-3">
+                    <label>Min Calories</label>
+                    <input type="number" name="minCalories" class="form-control" placeholder="Min Calories">
+                </div>
+                <div class="col-md-3">
+                    <label>Max Calories</label>
+                    <input type="number" name="maxCalories" class="form-control" placeholder="Max Calories">
+                </div>
+                <div class="col-md-3">
+                    <label>Sort by</label>
+                    <select name="sortBy" class="form-control">
+                        <option value="">-- None --</option>
+                        <option value="calories">Calories</option>
+                        <option value="protein">Protein</option>
+                        <option value="carbs">Carbs</option>
+                        <option value="fats">Fats</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <!-- ✅ Apply Filter Button -->
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
             </div>
-            <div class="col-md-4">
-                <label>Sort by</label>
-                <select name="sortBy" class="form-control">
-                    <option value="calories">Calories</option>
-                    <option value="protein">Protein</option>
-                    <option value="carbs">Carbs</option>
-                    <option value="fats">Fats</option>
-                </select>
-            </div>
-        </div>
+        </form>
 
         <!-- Meal Cards -->
         <div class="row">
             @foreach (var meal in Model)
             {
-                <div class="col-md-4">
+                <div class="col-md-4 mb-4">
                     <div class="card meal-card p-3 text-center">
-                        <img src="https://source.unsplash.com/300x200/?breakfast,healthy" class="card-img-top" alt="Meal">
+                        <img src="https://source.unsplash.com/300x200/?@mealType,healthy" class="card-img-top" alt="Meal">
                         <div class="card-body">
                             <h3>@meal.Name</h3>
                             <p>Calories: <strong>@meal.Calories kcal</strong></p>
@@ -60,9 +71,7 @@
     function addToTracker(mealId) {
         fetch('/FoodLogs/CreateAjax', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mealId: mealId })
         })
         .then(response => response.json())

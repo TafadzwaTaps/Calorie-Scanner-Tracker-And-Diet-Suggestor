@@ -19,7 +19,6 @@ public class UsersController : Controller
 
     [HttpGet] // Explicitly defining HTTP method
     [Route("")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Index()
     {
         return View(await _context.User.ToListAsync());
