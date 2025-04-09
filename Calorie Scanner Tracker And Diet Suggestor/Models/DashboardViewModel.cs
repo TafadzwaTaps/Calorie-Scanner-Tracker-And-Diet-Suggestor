@@ -10,10 +10,13 @@
         public List<ChartDataItem> ChartData { get; set; }  // Changed to List<ChartDataItem>
 
         // Add filters to the model to pass selected filters to the view
+        public decimal TargetCalories { get; set; }
         public string MealTypeFilter { get; set; }
         public DateTime? StartDateFilter { get; set; }
         public DateTime? EndDateFilter { get; set; }
         public decimal[] PieChartData { get; set; }
+
+        public string[] PieChartLabels { get; set; }
         public DashboardViewModel()
         {
             FoodLogs = new List<FoodLog>();

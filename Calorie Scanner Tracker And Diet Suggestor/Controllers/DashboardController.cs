@@ -60,6 +60,8 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 totalFats      // Fats
             };
 
+            var pieChartLabels = new[] { "Protein", "Carbs", "Fats" };  // Labels for Pie chart
+
             var dashboardViewModel = new DashboardViewModel
             {
                 TotalCalories = totalCalories,
@@ -69,6 +71,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 FoodLogs = foodLogs,
                 ChartData = dailyCalories,
                 PieChartData = pieChartData,  // Add Pie chart data to the view model
+                PieChartLabels = pieChartLabels,  // Add Pie chart labels
                 MealTypeFilter = mealType,
                 StartDateFilter = startDate,
                 EndDateFilter = endDate
