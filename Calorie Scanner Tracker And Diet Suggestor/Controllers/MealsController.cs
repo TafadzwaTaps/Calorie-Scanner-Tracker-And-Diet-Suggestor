@@ -1,5 +1,6 @@
 ﻿using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Models;
+using Google.Apis.Drive.v3.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -197,30 +198,125 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UploadImage([FromForm] string imageData)
+        public async Task<IActionResult> UploadImage([FromForm] string imageData, [FromForm] IFormFile imageFile)
         {
-            if (string.IsNullOrEmpty(imageData))
-                return BadRequest(new { message = "No image data received" });
+            if (string.IsNullOrEmpty(imageData) && (imageFile == null || imageFile.Length == 0))
+                return BadRequest(new { message = "No image data or file received" });
 
             try
             {
-                // Convert Base64 string to byte array
-                var base64Data = imageData.Split(',')[1];
-                var imageBytes = Convert.FromBase64String(base64Data);
+                byte[] imageBytes;
+
+                if (!string.IsNullOrEmpty(imageData))
+                {
+                    // Process Base64 string (usually from camera)
+                    var base64Data = imageData.Contains(",") ? imageData.Split(',')[1] : imageData;
+                    imageBytes = Convert.FromBase64String(base64Data);
+                }
+                else
+                {
+                    // Process file upload (from device)
+                    using (var ms = new MemoryStream())
+                    {
+                        await imageFile.CopyToAsync(ms);
+                        imageBytes = ms.ToArray();
+                    }
+                }
 
                 // Define storage path
-                var filePath = Path.Combine("wwwroot/uploads", $"{Guid.NewGuid()}.png");
+                var fileName = $"{Guid.NewGuid()}.png";
+                var filePath = Path.Combine("wwwroot/uploads", fileName);
+                var imageUrl = $"/uploads/{fileName}";
 
                 // Save image to server
                 await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
 
-                return Ok(new { message = "Image uploaded successfully", filePath });
+                // Analyze image (mock logic)
+                var analysis = await AnalyzeMealImageAsync(imageBytes); // Implement this method to return nutrition info
+
+                // Save analyzed meal
+                var meal = new Meals
+                {
+                    Name = "Captured Meal",
+                    Calories = analysis.Calories,
+                    Protein = analysis.Protein,
+                    Carbs = analysis.Carbs,
+                    Fats = analysis.Fats,
+                    MealType = "Lunch", // You can improve this later
+                    ImageUrl = imageUrl
+                };
+
+                _context.Meals.Add(meal);
+                await _context.SaveChangesAsync();
+
+                // Log to FoodLog
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+                var foodLog = new FoodLog
+                {
+                    UserId = userId,
+                    MealId = meal.Id,
+                    DateLogged = DateTime.Now,
+                    IsEaten = true,
+                    Calories = meal.Calories,
+                    Protein = meal.Protein,
+                    Carbs = meal.Carbs,
+                    Fats = meal.Fats,
+                    ImageUrl = imageUrl
+                };
+
+                _context.FoodLogs.Add(foodLog);
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = "Image uploaded and analyzed successfully",
+                    imageUrl = foodLog.ImageUrl,
+                    nutrition = new
+                    {
+                        foodLog.Calories,
+                        foodLog.Protein,
+                        foodLog.Carbs,
+                        foodLog.Fats
+                    }
+                });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error uploading image", error = ex.Message });
             }
         }
+
+
+
+        private async Task<FoodAnalysisResult> AnalyzeMealImageAsync(byte[] imageBytes)
+        {
+            // TODO: Replace this with your actual model/API
+            await Task.Delay(1000); // Simulate processing delay
+
+            return new FoodAnalysisResult
+            {
+                MealId = 1, // Could be dynamically detected
+                Calories = 450,
+                Protein = 30,
+                Carbs = 50,
+                Fats = 15
+            };
+        }
+
+        public class FoodAnalysisResult
+        {
+            public int MealId { get; set; }
+            public int Calories { get; set; }
+            public int Protein { get; set; }
+            public int Carbs { get; set; }
+            public int Fats { get; set; }
+        }
+
+        private int GetCurrentUserId()
+        {
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+        }
+
         public IActionResult Capture()
         {
             return View();

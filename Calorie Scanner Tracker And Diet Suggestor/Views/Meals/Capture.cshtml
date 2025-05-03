@@ -1,56 +1,249 @@
-﻿<video id="video" autoplay></video>
-<button id="capture">Capture</button>
-<p id="captureMessage" style="color: green; display: none;">Image captured successfully!</p>
-<canvas id="canvas" style="display:none;"></canvas>
-<img id="photo" style="display:none;" />
+﻿<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
-<form id="uploadForm" method="post" enctype="multipart/form-data">
-    <input type="hidden" id="imageData" name="imageData" />
-    <button type="submit">Upload</button>
-</form>
+<div class="container mt-5">
+    <h3 class="text-center mb-4">🍽 Meal Image Upload</h3>
+
+    <div class="row">
+        <!-- Camera Section -->
+        <div class="col-md-6 mb-4">
+            <h5>📷 Capture from Camera</h5>
+            <div class="d-flex justify-content-between mb-2">
+                <button id="startCamera" class="btn btn-info btn-sm">Start Camera</button>
+                <button id="capture" class="btn btn-primary btn-sm">Capture</button>
+                <button id="stopCamera" class="btn btn-danger btn-sm">Stop</button>
+            </div>
+            <video id="video" autoplay class="w-100 mb-2 border" style="max-height: 250px;"></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <p id="captureMessage" class="text-success mt-2" style="display: none;">✅ Image captured successfully!</p>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="col-md-6 mb-4">
+            <h5>🖼 Upload or Drag & Drop Image</h5>
+            <input type="file" id="imageFile" name="imageFile" accept="image/*" class="form-control-file mb-2">
+            <div id="dropZone" class="border p-3 text-center rounded bg-light">
+                📥 Drag & Drop Image Here
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="text-center mb-3">
+        <img id="photo" class="img-fluid rounded border" style="display:none; max-height: 250px;" />
+    </div>
+
+    <!-- Upload Form -->
+    <form id="uploadForm" method="post" enctype="multipart/form-data" class="text-center">
+        <input type="hidden" id="imageData" name="imageData" />
+        <button type="submit" class="btn btn-success">🚀 Upload Image</button>
+    </form>
+
+    <!-- Progress & Loading -->
+    <div class="progress mt-3" style="height: 25px; display:none;" id="progressBarContainer">
+        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">
+            0%
+        </div>
+    </div>
+
+    <div id="loadingSpinner" class="spinner-border text-primary mt-3" style="display:none;" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+
+    <!-- Results -->
+    <div id="resultArea" class="mt-4" style="display:none;">
+        <h5 class="text-center">🍴 Nutrition Information</h5>
+        <img id="uploadedImage" class="img-fluid d-block mx-auto mb-3 border rounded" style="max-height: 250px;" />
+        <ul class="list-group mb-3">
+            <li class="list-group-item">Calories: <span id="calories"></span> kcal</li>
+            <li class="list-group-item">Protein: <span id="protein"></span> g</li>
+            <li class="list-group-item">Carbs: <span id="carbs"></span> g</li>
+            <li class="list-group-item">Fats: <span id="fats"></span> g</li>
+        </ul>
+        <div id="errorMessage" class="text-danger text-center mb-3" style="display:none;"></div>
+        <div class="text-center">
+            <button id="retryButton" class="btn btn-secondary">🔄 Try Again</button>
+        </div>
+    </div>
+</div>
 
 <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const captureBtn = document.getElementById("capture");
+    const stopCameraBtn = document.getElementById("stopCamera");
+    const startCameraBtn = document.getElementById("startCamera");
     const uploadForm = document.getElementById("uploadForm");
     const imageDataInput = document.getElementById("imageData");
+    const imageFileInput = document.getElementById("imageFile");
     const captureMessage = document.getElementById("captureMessage");
+    const photoPreview = document.getElementById("photo");
+    const progressBar = document.getElementById("progressBar");
+    const progressBarContainer = document.getElementById("progressBarContainer");
+    const loadingSpinner = document.getElementById("loadingSpinner");
+    const resultArea = document.getElementById("resultArea");
+    const uploadedImage = document.getElementById("uploadedImage");
+    const caloriesSpan = document.getElementById("calories");
+    const proteinSpan = document.getElementById("protein");
+    const carbsSpan = document.getElementById("carbs");
+    const fatsSpan = document.getElementById("fats");
+    const errorMessage = document.getElementById("errorMessage");
+    const retryButton = document.getElementById("retryButton");
+    const dropZone = document.getElementById("dropZone");
 
-    // Access Camera
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => video.srcObject = stream)
-        .catch(err => console.error("Camera access error: ", err));
+    let cameraStream = null;
 
-    // Capture Image
+    // Start camera when button is clicked
+    startCameraBtn.addEventListener("click", () => {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                cameraStream = stream;
+                video.srcObject = stream;
+            })
+            .catch(err => console.error("Camera access error: ", err));
+    });
+
+    // Capture from camera
     captureBtn.addEventListener("click", () => {
+        if (!cameraStream) {
+            alert("Please start the camera first.");
+            return;
+        }
         const context = canvas.getContext("2d");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageDataURL = canvas.toDataURL("image/png");
-        imageDataInput.value = imageDataURL; // Send image data as Base64
+        imageDataInput.value = imageDataURL;
+        imageFileInput.value = '';
+
+        photoPreview.src = imageDataURL;
+        photoPreview.style.display = "block";
 
         captureMessage.style.display = "block";
-
-        // Hide message after 3 seconds
-        setTimeout(() => {
-            captureMessage.style.display = "none";
-        }, 3000);
+        setTimeout(() => captureMessage.style.display = "none", 3000);
     });
 
-    // Submit Image
-    uploadForm.addEventListener("submit", async (e) => {
+    // Stop camera
+    stopCameraBtn.addEventListener("click", () => {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+            cameraStream = null;
+        }
+    });
+
+    // File input preview
+    imageFileInput.addEventListener("change", () => {
+        if (imageFileInput.files && imageFileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                photoPreview.src = e.target.result;
+                photoPreview.style.display = "block";
+            };
+            reader.readAsDataURL(imageFileInput.files[0]);
+            imageDataInput.value = '';
+        }
+    });
+
+    // Drag & drop handler
+    dropZone.addEventListener("dragover", e => {
         e.preventDefault();
+        dropZone.classList.add("bg-light");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("bg-light");
+    });
+
+    dropZone.addEventListener("drop", e => {
+        e.preventDefault();
+        dropZone.classList.remove("bg-light");
+
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith("image/")) {
+            imageFileInput.files = e.dataTransfer.files;
+            const reader = new FileReader();
+            reader.onload = e => {
+                photoPreview.src = e.target.result;
+                photoPreview.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+            imageDataInput.value = '';
+        }
+    });
+
+    // Upload form submit
+    uploadForm.addEventListener("submit", e => {
+        e.preventDefault();
+
         const formData = new FormData();
-        formData.append("imageData", imageDataInput.value);
+        if (imageFileInput.files.length > 0) {
+            formData.append("imageFile", imageFileInput.files[0]);
+            formData.append("imageData", "");
+        } else if (imageDataInput.value) {
+            formData.append("imageData", imageDataInput.value);
+        } else {
+            alert("Please capture an image or select a file before uploading.");
+            return;
+        }
 
-        const response = await fetch("/Meals/UploadImage", {
-            method: "POST",
-            body: formData
-        });
+        progressBarContainer.style.display = "block";
+        progressBar.style.width = "0%";
+        progressBar.innerText = "0%";
+        loadingSpinner.style.display = "inline-block";
+        errorMessage.style.display = "none";
 
-        const result = await response.json();
-        alert(result.message);
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/Meals/UploadImage", true);
+
+        xhr.upload.onprogress = event => {
+            if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                progressBar.style.width = percent + "%";
+                progressBar.innerText = percent + "%";
+            }
+        };
+
+        xhr.onload = () => {
+            loadingSpinner.style.display = "none";
+            progressBar.style.width = "100%";
+            progressBar.innerText = "100%";
+
+            if (xhr.status === 200) {
+                const result = JSON.parse(xhr.responseText);
+                uploadedImage.src = result.imageUrl;
+                caloriesSpan.textContent = result.nutrition.calories;
+                proteinSpan.textContent = result.nutrition.protein;
+                carbsSpan.textContent = result.nutrition.carbs;
+                fatsSpan.textContent = result.nutrition.fats;
+
+                resultArea.style.display = "block";
+                uploadForm.reset();
+                photoPreview.style.display = "none";
+            } else {
+                errorMessage.textContent = "❌ Upload failed. Please try again.";
+                errorMessage.style.display = "block";
+            }
+            progressBarContainer.style.display = "none";
+        };
+
+        xhr.onerror = () => {
+            loadingSpinner.style.display = "none";
+            errorMessage.textContent = "❌ An error occurred during upload. Check your connection and try again.";
+            errorMessage.style.display = "block";
+            progressBarContainer.style.display = "none";
+        };
+
+        xhr.send(formData);
+    });
+
+    // Retry button
+    retryButton.addEventListener("click", () => {
+        resultArea.style.display = "none";
+        photoPreview.src = "";
+        photoPreview.style.display = "none";
+        imageDataInput.value = "";
+        imageFileInput.value = "";
+        errorMessage.style.display = "none";
     });
 </script>
