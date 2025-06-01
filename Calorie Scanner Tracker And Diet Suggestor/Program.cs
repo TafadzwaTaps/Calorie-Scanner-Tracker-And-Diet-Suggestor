@@ -31,7 +31,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         googleOptions.CallbackPath = "/auth/google-response";  // This should match the redirect URI
     });
 builder.Services.AddScoped<IEmailService, EmailService>();
-//.Services.AddScoped<NutritionApiService>();
+builder.Services.AddHttpClient<NutritionApiService>();
 
 
 builder.Services.AddAuthorization();

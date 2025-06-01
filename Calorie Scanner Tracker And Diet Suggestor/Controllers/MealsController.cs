@@ -1,10 +1,11 @@
 ﻿using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Models;
-using Google.Apis.Drive.v3.Data;
+using Calorie_Scanner_Tracker_And_Diet_Suggestor.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 {
@@ -12,10 +13,11 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
     public class MealsController : Controller
     {
         private readonly CalorieTrackerContext _context;
-
-        public MealsController(CalorieTrackerContext context)
+        private readonly NutritionApiService _nutritionApiService;
+        public MealsController(CalorieTrackerContext context, NutritionApiService nutritionApiService)
         {
             _context = context;
+            _nutritionApiService = nutritionApiService;
         }
 
         [HttpGet]
@@ -232,7 +234,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
 
                 // Analyze image (mock logic)
-                var analysis = await AnalyzeMealImageAsync(imageBytes); // Implement this method to return nutrition info
+                var analysis = await AnalyzeMealImageAsync(imageFile);
 
                 // Save analyzed meal
                 var meal = new Meals
@@ -285,23 +287,51 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 return StatusCode(500, new { message = "Error uploading image", error = ex.Message });
             }
         }
-
-
-
-        private async Task<FoodAnalysisResult> AnalyzeMealImageAsync(byte[] imageBytes)
+        private async Task<FoodAnalysisResult> AnalyzeMealImageAsync(IFormFile imageFile)
         {
-            // TODO: Replace this with your actual model/API
-            await Task.Delay(1000); // Simulate processing delay
+            var jsonResponse = await _nutritionApiService.AnalyzeImageAsync(imageFile);
+
+            var apiResult = JsonSerializer.Deserialize<FoodAnalysisApiResponse>(
+                jsonResponse,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            if (apiResult == null)
+                throw new Exception("Failed to deserialize API response.");
+
+            int mealId = FindClosestMealId(apiResult);
 
             return new FoodAnalysisResult
             {
-                MealId = 1, // Could be dynamically detected
-                Calories = 450,
-                Protein = 30,
-                Carbs = 50,
-                Fats = 15
+                MealId = mealId,
+                Calories = CalculateCalories(apiResult),
+                Protein = (int)Math.Round(apiResult.Protein),
+                Carbs = (int)Math.Round(apiResult.Carbs),
+                Fats = (int)Math.Round(apiResult.Fats)
             };
         }
+
+
+        private int FindClosestMealId(FoodAnalysisApiResponse apiResult)
+        {
+            var meals = _context.Meals.ToList();
+            var closestMeal = meals.OrderBy(m =>
+                Math.Abs((double)m.Protein - apiResult.Protein) +
+                Math.Abs((double)m.Carbs - apiResult.Carbs) +
+                Math.Abs((double)m.Fats - apiResult.Fats)
+            ).FirstOrDefault();
+
+            return closestMeal?.Id ?? 1; // fallback to 1 if no match
+        }
+
+
+        private int CalculateCalories(FoodAnalysisApiResponse apiResult)
+        {
+            // Use standard macro formula: 4 cal/g (carbs, protein), 9 cal/g (fats)
+            return (int)Math.Round(apiResult.Protein * 4 + apiResult.Carbs * 4 + apiResult.Fats * 9);
+        }
+
+
 
         public class FoodAnalysisResult
         {
@@ -311,6 +341,14 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             public int Carbs { get; set; }
             public int Fats { get; set; }
         }
+
+        public class FoodAnalysisApiResponse
+        {
+            public double Carbs { get; set; }
+            public double Fats { get; set; }
+            public double Protein { get; set; }
+        }
+
 
         private int GetCurrentUserId()
         {
