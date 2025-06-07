@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
 using Microsoft.EntityFrameworkCore;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Service;

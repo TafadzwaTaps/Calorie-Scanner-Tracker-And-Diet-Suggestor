@@ -10,6 +10,7 @@ using System.Text.Json;
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 {
     [Authorize]
+
     public class MealsController : Controller
     {
         private readonly CalorieTrackerContext _context;
@@ -140,6 +141,26 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View("Index", meals);
         }
 
+        [HttpGet("GetMeal/{id}")]
+        public async Task<IActionResult> GetMeal(int id)
+        {
+            Console.WriteLine($"GetMeal called with id={id}");  // or use ILogger
+            var meal = await _context.Meals.Include(m => m.PreparationSteps).FirstOrDefaultAsync(m => m.Id == id);
+            if (meal == null)
+            {
+                Console.WriteLine("Meal not found");
+                return NotFound();
+            }
+            return Json(new
+            {
+                id = meal.Id,
+                name = meal.Name,
+                preparationSteps = meal.PreparationSteps
+                    .OrderBy(s => s.StepNumber)
+                    .Select(s => new { s.Id, s.StepNumber, s.Description })
+            });
+        }
+
         [HttpGet]
         public IActionResult PostMeal()
         {
@@ -208,12 +229,14 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             try
             {
                 byte[] imageBytes;
+                string fileName;
 
                 if (!string.IsNullOrEmpty(imageData))
                 {
                     // Process Base64 string (usually from camera)
                     var base64Data = imageData.Contains(",") ? imageData.Split(',')[1] : imageData;
                     imageBytes = Convert.FromBase64String(base64Data);
+                    fileName = $"{Guid.NewGuid()}.png"; // Assuming PNG for camera captures
                 }
                 else
                 {
@@ -223,28 +246,42 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                         await imageFile.CopyToAsync(ms);
                         imageBytes = ms.ToArray();
                     }
+                    fileName = imageFile.FileName;
                 }
 
-                // Define storage path
-                var fileName = $"{Guid.NewGuid()}.png";
+                // Define storage path for the uploaded image
                 var filePath = Path.Combine("wwwroot/uploads", fileName);
                 var imageUrl = $"/uploads/{fileName}";
+
+                // Ensure the uploads directory exists
+                var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploadDir))
+                {
+                    Directory.CreateDirectory(uploadDir);
+                }
 
                 // Save image to server
                 await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
 
-                // Analyze image (mock logic)
-                var analysis = await AnalyzeMealImageAsync(imageFile);
+                // Analyze image by calling the Python ML API
+                var analysis = await AnalyzeMealImageAsync(imageBytes, fileName); // Pass bytes and filename
 
-                // Save analyzed meal
+                // Check for errors or warnings from the Python API
+                if (!string.IsNullOrEmpty(analysis.Error))
+                {
+                    // Propagate the specific error message from the Python API
+                    return StatusCode(400, new { message = analysis.Error, imageUrl = imageUrl });
+                }
+
+                // Save analyzed meal to database (direct use of AI prediction)
                 var meal = new Meals
                 {
-                    Name = "Captured Meal",
+                    Name = "AI Analyzed Meal", // Default name, consider user input or specific food detection
                     Calories = analysis.Calories,
                     Protein = analysis.Protein,
                     Carbs = analysis.Carbs,
                     Fats = analysis.Fats,
-                    MealType = "Lunch", // You can improve this later
+                    MealType = "Lunch", // You might want to let the user select this, or infer later
                     ImageUrl = imageUrl
                 };
 
@@ -279,35 +316,60 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                         foodLog.Protein,
                         foodLog.Carbs,
                         foodLog.Fats
-                    }
+                    },
+                    warning = analysis.WarningMessage // Pass warning message to frontend
                 });
+            }
+            catch (HttpRequestException httpEx)
+            {
+                // Handle network or API availability issues
+                return StatusCode(503, new { message = "Nutrition analysis service is unavailable. Please try again later.", error = httpEx.Message });
+            }
+            catch (JsonException jsonEx)
+            {
+                // Handle issues with deserializing the API response
+                return StatusCode(500, new { message = "Failed to parse analysis results. Service response format might be incorrect.", error = jsonEx.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error uploading image", error = ex.Message });
+                // Catch any other unexpected errors
+                return StatusCode(500, new { message = "An unexpected error occurred during image processing.", error = ex.Message });
             }
         }
-        private async Task<FoodAnalysisResult> AnalyzeMealImageAsync(IFormFile imageFile)
-        {
-            var jsonResponse = await _nutritionApiService.AnalyzeImageAsync(imageFile);
 
-            var apiResult = JsonSerializer.Deserialize<FoodAnalysisApiResponse>(
-                jsonResponse,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
+        // Updated signature to accept byte[] and fileName
+        private async Task<FoodAnalysisResult> AnalyzeMealImageAsync(byte[] imageBytes, string fileName)
+        {
+            var jsonResponse = await _nutritionApiService.AnalyzeImageAsync(imageBytes, fileName);
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var apiResult = JsonSerializer.Deserialize<FoodAnalysisApiResponse>(jsonResponse, options);
 
             if (apiResult == null)
-                throw new Exception("Failed to deserialize API response.");
+            {
+                // If deserialization results in null, it's a critical error or unexpected response
+                return new FoodAnalysisResult { Error = "Failed to deserialize API response. Check API output.", Calories = 0, Protein = 0, Carbs = 0, Fats = 0 };
+            }
 
-            int mealId = FindClosestMealId(apiResult);
+            // Check if the API returned an error property
+            if (!string.IsNullOrEmpty(apiResult.Error))
+            {
+                return new FoodAnalysisResult { Error = apiResult.Error, Calories = 0, Protein = 0, Carbs = 0, Fats = 0 };
+            }
+
+            // If you want to use the AI's direct prediction, don't use FindClosestMealId
+            // If you still want to map to an existing meal, then keep it.
+            // For now, I'm removing it to directly use the AI's values.
+            // int mealId = FindClosestMealId(apiResult); // Removed for direct AI usage
 
             return new FoodAnalysisResult
             {
-                MealId = mealId,
-                Calories = CalculateCalories(apiResult),
-                Protein = (int)Math.Round(apiResult.Protein),
-                Carbs = (int)Math.Round(apiResult.Carbs),
-                Fats = (int)Math.Round(apiResult.Fats)
+                // MealId = mealId, // Remove if you're not mapping to existing meals
+                Calories = apiResult.Calories, // Directly use calories from API
+                Protein = apiResult.Protein,
+                Carbs = apiResult.Carbs,
+                Fats = apiResult.Fats,
+                WarningMessage = apiResult.Warning // Pass any warnings
             };
         }
 
@@ -316,9 +378,9 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         {
             var meals = _context.Meals.ToList();
             var closestMeal = meals.OrderBy(m =>
-                Math.Abs((double)m.Protein - apiResult.Protein) +
-                Math.Abs((double)m.Carbs - apiResult.Carbs) +
-                Math.Abs((double)m.Fats - apiResult.Fats)
+                Math.Abs((decimal)m.Protein - apiResult.Protein) +
+                Math.Abs((decimal)m.Carbs - apiResult.Carbs) +
+                Math.Abs((decimal)m.Fats - apiResult.Fats)
             ).FirstOrDefault();
 
             return closestMeal?.Id ?? 1; // fallback to 1 if no match
@@ -332,21 +394,25 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         }
 
 
-
         public class FoodAnalysisResult
         {
-            public int MealId { get; set; }
-            public int Calories { get; set; }
-            public int Protein { get; set; }
-            public int Carbs { get; set; }
-            public int Fats { get; set; }
+            public int MealId { get; set; } // May become optional if not mapping to existing meals
+            public decimal Calories { get; set; } // Changed to double for precision
+            public decimal Protein { get; set; }  // Changed to double for precision
+            public decimal  Carbs { get; set; }    // Changed to double for precision
+            public decimal Fats { get; set; }     // Changed to double for precision
+            public string? Error { get; set; } //
+            public string? WarningMessage { get; set; } // For backend warnings
         }
 
         public class FoodAnalysisApiResponse
         {
-            public double Carbs { get; set; }
-            public double Fats { get; set; }
-            public double Protein { get; set; }
+            public decimal Carbs { get; set; }
+            public decimal Fats { get; set; }
+            public decimal Protein { get; set; }
+            public decimal Calories { get; set; } // Added Calories from Python API
+            public string? Error { get; set; }   // For error messages from Python API
+            public string? Warning { get; set; } // For warning messages from Python API
         }
 
 

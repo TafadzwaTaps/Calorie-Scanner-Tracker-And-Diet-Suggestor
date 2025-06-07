@@ -1,10 +1,54 @@
 ﻿<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<style>
+    /* Custom CSS for loading overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050; /* Above Bootstrap modals */
+        flex-direction: column;
+        color: white;
+        text-align: center; /* Ensure content inside is centered */
+    }
+
+        #loadingOverlay .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        #loadingOverlay h4 {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Styles to ensure the preview image is centered and visible during loading */
+        #loadingOverlay .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%; /* Take full width to help with centering */
+        }
+
+        #loadingOverlay .loading-image-preview {
+            max-width: 200px; /* Adjust as needed */
+            max-height: 200px; /* Adjust as needed */
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            object-fit: contain; /* Ensure the image fits within the bounds without distortion */
+        }
+</style>
 
 <div class="container mt-5">
     <h3 class="text-center mb-4">🍽 Meal Image Upload</h3>
 
     <div class="row">
-        <!-- Camera Section -->
         <div class="col-md-6 mb-4">
             <h5>📷 Capture from Camera</h5>
             <div class="d-flex justify-content-between mb-2">
@@ -17,7 +61,6 @@
             <p id="captureMessage" class="text-success mt-2" style="display: none;">✅ Image captured successfully!</p>
         </div>
 
-        <!-- File Upload Section -->
         <div class="col-md-6 mb-4">
             <h5>🖼 Upload or Drag & Drop Image</h5>
             <input type="file" id="imageFile" name="imageFile" accept="image/*" class="form-control-file mb-2">
@@ -27,29 +70,32 @@
         </div>
     </div>
 
-    <!-- Preview -->
     <div class="text-center mb-3">
         <img id="photo" class="img-fluid rounded border" style="display:none; max-height: 250px;" />
     </div>
 
-    <!-- Upload Form -->
     <form id="uploadForm" method="post" enctype="multipart/form-data" class="text-center">
         <input type="hidden" id="imageData" name="imageData" />
         <button type="submit" class="btn btn-success">🚀 Upload Image</button>
     </form>
 
-    <!-- Progress & Loading -->
-    <div class="progress mt-3" style="height: 25px; display:none;" id="progressBarContainer">
-        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">
-            0%
+    <div id="loadingOverlay" style="display:none;">
+        <div class="loading-content">
+            <img id="loadingImagePreview" class="loading-image-preview" style="display: none;" alt="Preview">
+            <div class="spinner-border text-light" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <h4>Analyzing your meal...</h4>
+            <p id="loadingMessage">Please wait, this might take a moment.</p>
+            <div class="progress mt-3 w-50" style="height: 25px;">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">
+                    0%
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="loadingSpinner" class="spinner-border text-primary mt-3" style="display:none;" role="status">
-        <span class="sr-only">Loading...</span>
-    </div>
 
-    <!-- Results -->
     <div id="resultArea" class="mt-4" style="display:none;">
         <h5 class="text-center">🍴 Nutrition Information</h5>
         <img id="uploadedImage" class="img-fluid d-block mx-auto mb-3 border rounded" style="max-height: 250px;" />
@@ -59,9 +105,10 @@
             <li class="list-group-item">Carbs: <span id="carbs"></span> g</li>
             <li class="list-group-item">Fats: <span id="fats"></span> g</li>
         </ul>
-        <div id="errorMessage" class="text-danger text-center mb-3" style="display:none;"></div>
+        <div id="apiWarningMessage" class="alert alert-warning text-center" style="display:none;"></div>
+        <div id="errorMessage" class="alert alert-danger text-center" style="display:none;"></div>
         <div class="text-center">
-            <button id="retryButton" class="btn btn-secondary">🔄 Try Again</button>
+            <button id="retryButton" class="btn btn-secondary">🔄 Analyze Another Meal</button>
         </div>
     </div>
 </div>
@@ -77,9 +124,12 @@
     const imageFileInput = document.getElementById("imageFile");
     const captureMessage = document.getElementById("captureMessage");
     const photoPreview = document.getElementById("photo");
+
+    const loadingOverlay = document.getElementById("loadingOverlay");
     const progressBar = document.getElementById("progressBar");
-    const progressBarContainer = document.getElementById("progressBarContainer");
-    const loadingSpinner = document.getElementById("loadingSpinner");
+    const loadingMessage = document.getElementById("loadingMessage");
+    const loadingImagePreview = document.getElementById("loadingImagePreview"); // New: Image for loading screen
+
     const resultArea = document.getElementById("resultArea");
     const uploadedImage = document.getElementById("uploadedImage");
     const caloriesSpan = document.getElementById("calories");
@@ -87,19 +137,36 @@
     const carbsSpan = document.getElementById("carbs");
     const fatsSpan = document.getElementById("fats");
     const errorMessage = document.getElementById("errorMessage");
+    const apiWarningMessage = document.getElementById("apiWarningMessage");
     const retryButton = document.getElementById("retryButton");
     const dropZone = document.getElementById("dropZone");
 
     let cameraStream = null;
 
+    // Simulated delay duration (adjusted for 45% reduction from instant)
+    // Total simulated delay will be about 2.5 seconds (2500ms)
+    const SIMULATED_DELAY_STEP = 500; // 500ms per step
+
+    // Helper to show/hide sections
+    function showSection(element) { element.style.display = 'block'; }
+    function hideSection(element) { element.style.display = 'none'; }
+
     // Start camera when button is clicked
     startCameraBtn.addEventListener("click", () => {
+        hideSection(resultArea);
+        hideSection(errorMessage);
+        hideSection(apiWarningMessage);
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
                 cameraStream = stream;
                 video.srcObject = stream;
+                showSection(video);
+                hideSection(photoPreview); // Hide existing preview if camera starts
             })
-            .catch(err => console.error("Camera access error: ", err));
+            .catch(err => {
+                console.error("Camera access error: ", err);
+                alert("Could not access camera. Please check permissions or try file upload.");
+            });
     });
 
     // Capture from camera
@@ -108,19 +175,24 @@
             alert("Please start the camera first.");
             return;
         }
+        hideSection(resultArea);
+        hideSection(errorMessage);
+        hideSection(apiWarningMessage);
+
         const context = canvas.getContext("2d");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageDataURL = canvas.toDataURL("image/png");
         imageDataInput.value = imageDataURL;
-        imageFileInput.value = '';
+        imageFileInput.value = ''; // Clear file input if using camera
 
         photoPreview.src = imageDataURL;
-        photoPreview.style.display = "block";
+        showSection(photoPreview);
+        hideSection(video); // Hide video feed after capture
 
-        captureMessage.style.display = "block";
-        setTimeout(() => captureMessage.style.display = "none", 3000);
+        showSection(captureMessage);
+        setTimeout(() => hideSection(captureMessage), 3000);
     });
 
     // Stop camera
@@ -129,121 +201,240 @@
             cameraStream.getTracks().forEach(track => track.stop());
             video.srcObject = null;
             cameraStream = null;
+            hideSection(video); // Hide video element
         }
     });
 
     // File input preview
     imageFileInput.addEventListener("change", () => {
+        hideSection(resultArea);
+        hideSection(errorMessage);
+        hideSection(apiWarningMessage);
         if (imageFileInput.files && imageFileInput.files[0]) {
             const reader = new FileReader();
             reader.onload = e => {
                 photoPreview.src = e.target.result;
-                photoPreview.style.display = "block";
+                showSection(photoPreview);
+                hideSection(video); // Hide video if file is selected
+                stopCameraBtn.click(); // Stop camera if running
             };
             reader.readAsDataURL(imageFileInput.files[0]);
-            imageDataInput.value = '';
+            imageDataInput.value = ''; // Clear imageData if using file input
         }
     });
 
     // Drag & drop handler
     dropZone.addEventListener("dragover", e => {
         e.preventDefault();
-        dropZone.classList.add("bg-light");
+        dropZone.classList.add("bg-secondary");
     });
 
     dropZone.addEventListener("dragleave", () => {
-        dropZone.classList.remove("bg-light");
+        dropZone.classList.remove("bg-secondary");
     });
 
     dropZone.addEventListener("drop", e => {
         e.preventDefault();
-        dropZone.classList.remove("bg-light");
+        dropZone.classList.remove("bg-secondary");
 
         const file = e.dataTransfer.files[0];
         if (file && file.type.startsWith("image/")) {
-            imageFileInput.files = e.dataTransfer.files;
+            imageFileInput.files = e.dataTransfer.files; // Assign dropped file to input
             const reader = new FileReader();
             reader.onload = e => {
                 photoPreview.src = e.target.result;
-                photoPreview.style.display = "block";
+                showSection(photoPreview);
+                hideSection(video); // Hide video if file is dropped
+                stopCameraBtn.click(); // Stop camera if running
             };
             reader.readAsDataURL(file);
-            imageDataInput.value = '';
+            imageDataInput.value = ''; // Clear imageData if using file input
+        } else {
+            alert("Only image files are allowed.");
         }
     });
 
     // Upload form submit
-    uploadForm.addEventListener("submit", e => {
+    uploadForm.addEventListener("submit", async e => {
         e.preventDefault();
 
         const formData = new FormData();
+        let fileToUpload = null;
+        let fileName = "uploaded_image.png"; // Default file name
+
         if (imageFileInput.files.length > 0) {
-            formData.append("imageFile", imageFileInput.files[0]);
-            formData.append("imageData", "");
+            fileToUpload = imageFileInput.files[0];
+            fileName = fileToUpload.name;
+            formData.append("imageFile", fileToUpload);
         } else if (imageDataInput.value) {
-            formData.append("imageData", imageDataInput.value);
+            // Convert base64 to Blob for consistent handling and better server compatibility
+            const byteString = atob(imageDataInput.value.split(',')[1]);
+            const mimeString = imageDataInput.value.split(',')[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            fileToUpload = new Blob([ab], { type: mimeString });
+            fileName = `captured_image.${mimeString.split('/')[1] || 'png'}`; // Dynamic extension
+            formData.append("imageFile", fileToUpload, fileName); // Append as file
         } else {
             alert("Please capture an image or select a file before uploading.");
             return;
         }
 
-        progressBarContainer.style.display = "block";
+        // Show loading overlay
+        showSection(loadingOverlay);
+        hideSection(errorMessage);
+        hideSection(apiWarningMessage);
+        hideSection(resultArea);
+        hideSection(photoPreview); // Hide the main preview image before setting the one in the overlay
+
+        // Display the image being processed in the loading overlay
+        if (fileToUpload) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                loadingImagePreview.src = e.target.result;
+                showSection(loadingImagePreview);
+            };
+            reader.readAsDataURL(fileToUpload);
+        } else {
+            hideSection(loadingImagePreview);
+        }
+
+        // Reset progress bar
         progressBar.style.width = "0%";
         progressBar.innerText = "0%";
-        loadingSpinner.style.display = "inline-block";
-        errorMessage.style.display = "none";
+        loadingMessage.textContent = "Initializing upload...";
+
+
+        // --- Simulated Analysis Steps with Delays ---
+        let currentProgress = 0;
+        const progressIncrement = 25; // For each step
+
+        // Step 1: Uploading Image
+        loadingMessage.textContent = "Uploading image...";
+        currentProgress += progressIncrement;
+        progressBar.style.width = currentProgress + "%";
+        progressBar.innerText = currentProgress + "%";
+        await new Promise(resolve => setTimeout(resolve, SIMULATED_DELAY_STEP));
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/Meals/UploadImage", true);
 
         xhr.upload.onprogress = event => {
             if (event.lengthComputable) {
-                const percent = Math.round((event.loaded / event.total) * 100);
-                progressBar.style.width = percent + "%";
-                progressBar.innerText = percent + "%";
+                // Adjust upload progress to fill up to 50% for combined effect
+                const uploadPercent = Math.round((event.loaded / event.total) * (progressIncrement / 100) * 100);
+                progressBar.style.width = (currentProgress + uploadPercent) + "%";
+                progressBar.innerText = (currentProgress + uploadPercent) + "%";
+                if (currentProgress + uploadPercent < 50) { // Limit message update
+                    loadingMessage.textContent = `Uploading image... ${currentProgress + uploadPercent}%`;
+                }
             }
         };
 
-        xhr.onload = () => {
-            loadingSpinner.style.display = "none";
-            progressBar.style.width = "100%";
-            progressBar.innerText = "100%";
+        xhr.onload = async () => { // Make this async to await internal delays
+            if (xhr.status >= 200 && xhr.status < 300) { // Success (2xx status codes)
+                // Step 2: Analyzing Image
+                loadingMessage.textContent = "Analyzing image...";
+                currentProgress = 50; // Set to 50% after upload completion
+                progressBar.style.width = currentProgress + "%";
+                progressBar.innerText = currentProgress + "%";
+                await new Promise(resolve => setTimeout(resolve, SIMULATED_DELAY_STEP));
 
-            if (xhr.status === 200) {
-                const result = JSON.parse(xhr.responseText);
-                uploadedImage.src = result.imageUrl;
-                caloriesSpan.textContent = result.nutrition.calories;
-                proteinSpan.textContent = result.nutrition.protein;
-                carbsSpan.textContent = result.nutrition.carbs;
-                fatsSpan.textContent = result.nutrition.fats;
+                // Step 3: Detecting Elements
+                loadingMessage.textContent = "Detecting elements...";
+                currentProgress = 75;
+                progressBar.style.width = currentProgress + "%";
+                progressBar.innerText = currentProgress + "%";
+                await new Promise(resolve => setTimeout(resolve, SIMULATED_DELAY_STEP));
 
-                resultArea.style.display = "block";
-                uploadForm.reset();
-                photoPreview.style.display = "none";
+                // Step 4: Processing Results
+                loadingMessage.textContent = "Processing results...";
+                currentProgress = 90; // Almost done
+                progressBar.style.width = currentProgress + "%";
+                progressBar.innerText = currentProgress + "%";
+                await new Promise(resolve => setTimeout(resolve, SIMULATED_DELAY_STEP)); // Final delay before displaying
+
+                try {
+                    const result = JSON.parse(xhr.responseText);
+                    uploadedImage.src = result.imageUrl;
+                    caloriesSpan.textContent = result.nutrition.calories;
+                    proteinSpan.textContent = result.nutrition.protein;
+                    carbsSpan.textContent = result.nutrition.carbs;
+                    fatsSpan.textContent = result.nutrition.fats;
+
+                    if (result.warning) {
+                        apiWarningMessage.textContent = `⚠️ Warning: ${result.warning}`;
+                        showSection(apiWarningMessage);
+                    } else {
+                        hideSection(apiWarningMessage);
+                    }
+
+                    // Final step: ensure 100% progress and display
+                    loadingMessage.textContent = "Done!";
+                    progressBar.style.width = "100%";
+                    progressBar.innerText = "100%";
+                    await new Promise(resolve => setTimeout(resolve, SIMULATED_DELAY_STEP)); // A small final delay for "Done" to be visible
+
+                    hideSection(loadingOverlay); // Hide overlay finally
+                    showSection(resultArea);
+                    uploadForm.reset();
+                    // photoPreview is already hidden, uploadedImage is shown in resultArea
+                } catch (parseError) {
+                    hideSection(loadingOverlay); // Hide on error
+                    errorMessage.textContent = "❌ An unexpected error occurred while processing the response.";
+                    showSection(errorMessage);
+                    console.error("JSON parse error:", parseError);
+                }
             } else {
-                errorMessage.textContent = "❌ Upload failed. Please try again.";
-                errorMessage.style.display = "block";
+                // Handle API errors (4xx, 5xx)
+                hideSection(loadingOverlay); // Hide on error
+                try {
+                    const errorResult = JSON.parse(xhr.responseText);
+                    errorMessage.textContent = `❌ ${errorResult.message || "An unknown error occurred."}`;
+                } catch (parseError) {
+                    errorMessage.textContent = `❌ Upload failed with status ${xhr.status}. Please try again.`;
+                }
+                showSection(errorMessage);
             }
-            progressBarContainer.style.display = "none";
         };
 
         xhr.onerror = () => {
-            loadingSpinner.style.display = "none";
-            errorMessage.textContent = "❌ An error occurred during upload. Check your connection and try again.";
-            errorMessage.style.display = "block";
-            progressBarContainer.style.display = "none";
+            hideSection(loadingOverlay);
+            errorMessage.textContent = "❌ Network error. Could not reach the server. Please check your connection.";
+            showSection(errorMessage);
+        };
+
+        xhr.onabort = () => {
+            hideSection(loadingOverlay);
+            errorMessage.textContent = "Upload cancelled.";
+            showSection(errorMessage);
         };
 
         xhr.send(formData);
     });
 
-    // Retry button
+    // Retry button (resets UI for new analysis)
     retryButton.addEventListener("click", () => {
-        resultArea.style.display = "none";
-        photoPreview.src = "";
-        photoPreview.style.display = "none";
+        hideSection(resultArea);
+        hideSection(photoPreview); // Ensure this is hidden
+        hideSection(errorMessage);
+        hideSection(apiWarningMessage);
+        hideSection(loadingImagePreview); // Ensure loading image preview is also hidden
         imageDataInput.value = "";
         imageFileInput.value = "";
-        errorMessage.style.display = "none";
+        // If camera was active, restart it for convenience
+        if (!cameraStream && video.srcObject === null) {
+            startCameraBtn.click();
+        }
+    });
+
+    // Handle initial state if no image is present
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!photoPreview.src || photoPreview.src === window.location.href) {
+            hideSection(photoPreview);
+        }
     });
 </script>

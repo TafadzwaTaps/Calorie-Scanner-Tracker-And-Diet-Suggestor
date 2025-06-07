@@ -2,7 +2,7 @@
 {
     public class DashboardViewModel
     {
-        public int TotalCalories { get; set; }
+        public decimal TotalCalories { get; set; }
         public decimal TotalProtein { get; set; }
         public decimal TotalCarbs { get; set; }
         public decimal TotalFats { get; set; }
@@ -27,6 +27,6 @@
     public class ChartDataItem
     {
         public string Date { get; set; }
-        public int Calories { get; set; }
+        public decimal Calories { get; set; }
     }
 }

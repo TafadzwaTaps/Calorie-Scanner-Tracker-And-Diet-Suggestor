@@ -115,15 +115,24 @@ else
 
 @section Scripts {
     <script>
-        function loadPreparationSteps(mealId) {
+                        function loadPreparationSteps(mealId) {
+            console.log("Loading steps for meal ID:", mealId);
+
             fetch(`/Meals/GetMeal/${mealId}`)
-                .then(res => res.json())
+                .then(res => {
+                    console.log("Fetch response status:", res.status);
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    return res.json();
+                })
                 .then(data => {
+                    console.log("Received preparation steps data:", data);
                     const steps = data.preparationSteps;
                     let html = `<ul>`;
                     if (steps && steps.length > 0) {
                         steps.forEach(step => {
-                            html += `<li>${step}</li>`;
+                            html += `<li><strong>Step ${step.stepNumber}:</strong> ${step.description}</li>`;
                         });
                     } else {
                         html += `<li>No steps available</li>`;
@@ -131,8 +140,16 @@ else
                     html += `</ul>`;
                     document.getElementById("prepStepsContent").innerHTML = html;
                     new bootstrap.Modal(document.getElementById("prepModal")).show();
+                })
+                .catch(error => {
+                    console.error("Error loading preparation steps:", error);
+                    document.getElementById("prepStepsContent").innerHTML = "<p class='text-danger'>Failed to load steps.</p>";
+                    new bootstrap.Modal(document.getElementById("prepModal")).show();
                 });
         }
+
+
+
 
         function addToTracker(mealId) {
             fetch('/FoodLogs/CreateAjax', {

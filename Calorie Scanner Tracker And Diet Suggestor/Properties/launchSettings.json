@@ -46,4 +46,4 @@
       "sslPort": 44363
     }
   }
-}
+}dotnet dev-certs https --clean

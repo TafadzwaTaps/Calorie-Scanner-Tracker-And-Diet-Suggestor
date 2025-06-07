@@ -13,13 +13,13 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
         public bool IsEaten { get; set; } = false;
 
         [NotMapped]
-        public int Calories { get; set; }
+        public decimal Calories { get; set; } // Change to double
         [NotMapped]
-        public decimal Protein { get; set; }
+        public decimal Protein { get; set; }  // Change to double
         [NotMapped]
-        public decimal Carbs { get; set; }
+        public decimal Carbs { get; set; }    // Change to double
         [NotMapped]
-        public decimal Fats { get; set; }
+        public decimal Fats { get; set; }     // Change to double
 
         [NotMapped]
         public string? ImageUrl { get; set; }

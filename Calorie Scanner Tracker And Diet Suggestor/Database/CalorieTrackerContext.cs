@@ -34,7 +34,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Database
             modelBuilder.Entity<Meals>().HasKey(t => t.Id);
             modelBuilder.Entity<Models.User>().HasKey(u => u.Id);  // Ensure primary key
             modelBuilder.Entity<FoodLog>().HasKey(t => t.Id);
-            modelBuilder.Entity<PreparationStep>().HasKey(t => t.Id);
+            modelBuilder.Entity<PreparationStep>().HasOne(p => p.Meal);
             modelBuilder.Entity<UserPreferences>().HasKey(t => t.Id);
             modelBuilder.Entity<UserSettings>().HasKey(t => t.Id);
             modelBuilder.Entity<Message>().HasKey(t => t.MessageId);

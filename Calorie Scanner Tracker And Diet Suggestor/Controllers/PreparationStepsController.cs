@@ -71,6 +71,61 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return RedirectToAction("Index", new { mealId = step.MealId });
         }
 
+        // GET: PreparationSteps/Edit/5
+        [HttpGet("Edit/{id}")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var step = await _context.PreparationSteps.FindAsync(id);
+            if (step == null)
+            {
+                Console.WriteLine($"❌ Step with ID {id} not found.");
+                return NotFound();
+            }
+
+            return View(step);
+        }
+
+        // POST: PreparationSteps/Edit/5
+        [HttpPost("Edit/{id}")]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MealId,StepNumber,Description")] PreparationStep step)
+        {
+            if (id != step.Id)
+            {
+                return BadRequest();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(step);
+            }
+
+            try
+            {
+                _context.Update(step);
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"✅ Step {id} updated successfully.");
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!PreparationStepExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToAction("Index", new { mealId = step.MealId });
+        }
+
+        private bool PreparationStepExists(int id)
+        {
+            return _context.PreparationSteps.Any(e => e.Id == id);
+        }
+
+
 
         // 📌 POST: Delete a Preparation Step
         [HttpPost("Delete/{id}")]
