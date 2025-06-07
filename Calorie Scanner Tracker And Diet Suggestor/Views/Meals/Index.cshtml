@@ -115,7 +115,7 @@ else
 
 @section Scripts {
     <script>
-                        function loadPreparationSteps(mealId) {
+                            function loadPreparationSteps(mealId) {
             console.log("Loading steps for meal ID:", mealId);
 
             fetch(`/Meals/GetMeal/${mealId}`)
@@ -129,17 +129,22 @@ else
                 .then(data => {
                     console.log("Received preparation steps data:", data);
                     const steps = data.preparationSteps;
-                    let html = `<ul>`;
                     if (steps && steps.length > 0) {
+                        let html = `<ul>`;
                         steps.forEach(step => {
                             html += `<li><strong>Step ${step.stepNumber}:</strong> ${step.description}</li>`;
                         });
+                        html += `</ul>`;
+                        document.getElementById("prepStepsContent").innerHTML = html;
+                        new bootstrap.Modal(document.getElementById("prepModal")).show();
                     } else {
-                        html += `<li>No steps available</li>`;
+                        // No steps available - prompt user to add
+                        const addSteps = confirm("No preparation steps available. Would you like to add steps now?");
+                        if (addSteps) {
+                            // Redirect to PreparationSteps/Create/{mealId}
+                            window.location.href = `/PreparationSteps/Create/${mealId}`;
+                        }
                     }
-                    html += `</ul>`;
-                    document.getElementById("prepStepsContent").innerHTML = html;
-                    new bootstrap.Modal(document.getElementById("prepModal")).show();
                 })
                 .catch(error => {
                     console.error("Error loading preparation steps:", error);
@@ -147,7 +152,6 @@ else
                     new bootstrap.Modal(document.getElementById("prepModal")).show();
                 });
         }
-
 
 
 

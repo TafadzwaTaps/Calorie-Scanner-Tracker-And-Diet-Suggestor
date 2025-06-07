@@ -2,9 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Database;
 using Calorie_Scanner_Tracker_And_Diet_Suggestor.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
 {
+
     [Route("PreparationSteps")]
     public class PreparationStepsController : Controller
     {
@@ -124,7 +126,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         {
             return _context.PreparationSteps.Any(e => e.Id == id);
         }
-
+        
 
 
         // 📌 POST: Delete a Preparation Step

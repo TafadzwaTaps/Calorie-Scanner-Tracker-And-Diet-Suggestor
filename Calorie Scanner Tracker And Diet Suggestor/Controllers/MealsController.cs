@@ -141,7 +141,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return View("Index", meals);
         }
 
-        [HttpGet("GetMeal/{id}")]
+        [HttpGet]
         public async Task<IActionResult> GetMeal(int id)
         {
             Console.WriteLine($"GetMeal called with id={id}");  // or use ILogger
