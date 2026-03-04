@@ -1,0 +1,25 @@
+﻿@model Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.PreparationStep
+
+@{
+    ViewData["Title"] = "Edit Preparation Step";
+}
+
+<h2>Edit Preparation Step</h2>
+
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="MealId" />
+
+    <div class="mb-3">
+        <label class="form-label">Step Number</label>
+        <input type="number" asp-for="StepNumber" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea asp-for="Description" class="form-control" required></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a href="@Url.Action("Index", "PreparationSteps", new { mealId = Model.MealId })" class="btn btn-secondary ms-2">Cancel</a>
+</form>

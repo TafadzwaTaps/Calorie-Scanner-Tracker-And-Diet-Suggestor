@@ -1,0 +1,176 @@
+﻿@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Calorie Tracker and Diet Suggestor System Welcomes You";
+
+    var username = User.Identity?.IsAuthenticated == true
+        ? User.FindFirst(ClaimTypes.Name)?.Value
+        : "Guest";
+
+    var role = User.Identity?.IsAuthenticated == true
+        ? User.FindFirst(ClaimTypes.Role)?.Value
+        : "";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Tracker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('dark-mode', document.body.classList.contains('dark-mode'));
+        }
+        window.onload = function() {
+            if (localStorage.getItem('dark-mode') === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+        }
+    </script>
+    <style>
+        .dark-mode {
+            background-color: #121212;
+            color: white;
+        }
+
+        .meal-card {
+            border-radius: 15px;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .user-profile {
+            position: relative; /* Ensures dropdown positions correctly */
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-details {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 50px; /* Adjusts dropdown below the icon */
+            right: 0;
+            display: none;
+            min-width: 200px;
+            background-color: white;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+            .dropdown-menu.show {
+                display: block; /* Makes dropdown visible */
+            }
+
+
+        .profile-img {
+            width: 40px; /* Adjust size to fit navbar */
+            height: 40px;
+            border-radius: 50%; /* Circular shape */
+            object-fit: cover; /* Ensures it doesn't stretch */
+        }
+
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Calorie Tracker</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="HomePage">HomePage</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-area="" asp-controller="Meals" asp-action="Index">Meals </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-area="" asp-controller="FoodLogs" asp-action="Index">FoodLogs </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-area="" asp-controller="Users" asp-action="Index">Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Contact">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="AboutUs">About Us</a>
+                    </li>
+                    <li class="nav-item"><button class="btn btn-outline-light" onclick="toggleDarkMode()">Toggle Dark Mode</button></li>
+
+                    <!-- Fix: Wrap user profile inside <li> -->
+                    <li class="nav-item">
+                        <div class="user-profile">
+                            <div class="user-details" onclick="toggleDropdown()">
+                                <img src="~/images/User icon.jpg" class="profile-img">
+                                <div class="user-info">
+                                    <div class="username">@username</div>
+                                    <div class="role">@role</div>
+                                </div>
+                                <div class="dropdown-caret">&#9660;</div>
+                            </div>
+                            <div class="dropdown-menu" id="dropdownMenu">
+                                <a class="dropdown-item" href="@Url.Action("Account", "Home")">Account</a>
+                                <a class="dropdown-item" href="@Url.Action("Inbox", "Home")">Inbox</a>
+                                <a class="dropdown-item" href="@Url.Action("Settings", "Home")">Settings</a>
+                                <a class="dropdown-item" href="@Url.Action("Logout", "Auth")">Logout</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        @RenderBody()
+    </div>
+
+    <footer class="bg-dark text-white text-center py-3 mt-4">
+        <p>&copy; 2025 Calorie Tracker. All rights reserved.</p>
+    </footer>
+
+    @RenderSection("Scripts", required: false)
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+<script>
+    window.onpageshow = function (event) {
+        if (event.persisted || (window.performance && window.performance.navigation.type == 5)) {
+            window.location.href = '@Url.Action("Login", "Auth")';
+        }
+    };
+
+    function toggleDropdown() {
+        var dropdownMenu = document.getElementById('dropdownMenu');
+        dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+    }
+
+</script>

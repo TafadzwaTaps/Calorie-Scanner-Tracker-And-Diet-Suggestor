@@ -1,0 +1,27 @@
+﻿services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ConnectionStrings__CalorieTrackerConnection=Server=db,1433;Database=CalorieTracker;User Id=sa;Password=Matrix!23Secure;TrustServerCertificate=True
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - app_network
+
+  db:
+    image: rathious23/trtserver:latest
+    container_name: TmxServerNew
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Matrix!23Secure
+    ports:
+      - "1434:1433"
+    networks:
+      - app_network
+
+networks:
+  app_network:

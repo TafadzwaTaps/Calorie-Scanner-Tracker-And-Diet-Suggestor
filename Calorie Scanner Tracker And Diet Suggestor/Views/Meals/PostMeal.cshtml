@@ -1,0 +1,55 @@
+﻿@model Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Meals
+
+@{
+    ViewData["Title"] = "Add Meal";
+}
+
+<div class="container mt-5">
+    <div class="card shadow-lg p-4 rounded-4">
+        <h2 class="text-center text-primary fw-bold">Add a New Meal</h2>
+
+        <form asp-action="PostMeal" method="post">
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label fw-semibold">Meal Name</label>
+                <input asp-for="Name" class="form-control p-2 rounded-3" required placeholder="Enter meal name">
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Calories" class="form-label fw-semibold">Calories</label>
+                <input asp-for="Calories" type="number" class="form-control p-2 rounded-3" required placeholder="Enter calories">
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Protein" class="form-label fw-semibold">Protein (g)</label>
+                <input asp-for="Protein" type="number" step="0.1" class="form-control p-2 rounded-3" required placeholder="Enter protein content">
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Carbs" class="form-label fw-semibold">Carbs (g)</label>
+                <input asp-for="Carbs" type="number" step="0.1" class="form-control p-2 rounded-3" required placeholder="Enter carb content">
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Fats" class="form-label fw-semibold">Fats (g)</label>
+                <input asp-for="Fats" type="number" step="0.1" class="form-control p-2 rounded-3" required placeholder="Enter fat content">
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="MealType" class="form-label fw-semibold">Meal Type</label>
+                <select asp-for="MealType" class="form-control p-2 rounded-3" required>
+                    <option value="">Select Meal Type</option>
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch">Lunch</option>
+                    <option value="Dinner">Dinner</option>
+                    <option value="Snack">Snack</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 rounded-3">Save Meal</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a asp-action="Index" class="text-decoration-none text-secondary">Back to Meal List</a>
+        </div>
+    </div>
+</div>

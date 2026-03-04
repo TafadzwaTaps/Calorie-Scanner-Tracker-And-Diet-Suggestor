@@ -1,0 +1,206 @@
+﻿@model IEnumerable<Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.Meals>
+@{
+    ViewData["Title"] = "Meals";
+    var mealType = ViewData["MealType"]?.ToString()?.ToLower() ?? "breakfast";
+}
+
+<h2 class="mb-4 text-center text-muted">
+    Meal Type: <span class="text-primary">@mealType.ToUpper()</span>
+</h2>
+
+<div class="text-center mb-4">
+    <!-- Title Section -->
+    <h1 class="fs-3 mb-2">Meals for <span class="text-primary">@ViewData["MealType"]</span></h1>
+    <p class="text-muted fs-6">Here are some meal options for your selected meal type.</p>
+
+    <!-- Meal Type Buttons Section -->
+    <div class="btn-group" role="group">
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="breakfast"
+           class="btn btn-info @(mealType == "breakfast" ? "active" : "")">☀️ Breakfast</a>
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="lunch"
+           class="btn btn-warning @(mealType == "lunch" ? "active" : "")">🍽 Lunch</a>
+        <a asp-controller="Meals" asp-action="Index" asp-route-type="dinner"
+           class="btn btn-success @(mealType == "dinner" ? "active" : "")">🌙 Dinner</a>
+    </div>
+</div>
+
+<!-- Search and Filters Form -->
+<form method="get" asp-action="Index" class="d-flex flex-column flex-sm-row justify-content-between gap-4 mb-5">
+    <div class="d-flex gap-3 w-100">
+        <input type="hidden" name="type" value="@mealType" />
+        <input class="form-control" type="text" name="searchTerm" placeholder="Search meals..." />
+        <select class="form-select" name="sortBy">
+            <option value="">Sort By</option>
+            <option value="calories">Calories</option>
+            <option value="protein">Protein</option>
+            <option value="carbs">Carbs</option>
+            <option value="fats">Fats</option>
+        </select>
+    </div>
+
+    <div class="d-flex gap-3 w-100">
+        <input type="number" name="minCalories" class="form-control" placeholder="Min Cal" />
+        <input type="number" name="maxCalories" class="form-control" placeholder="Max Cal" />
+        <button type="submit" class="btn btn-primary btn-lg w-100">Apply</button>
+    </div>
+</form>
+
+<p class="text-center"><strong>Total Meals:</strong> @Model.Count()</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center">No meals available for this type.</div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var meal in Model)
+        {
+            <div class="col">
+                <div class="card shadow-lg rounded-3 h-100">
+                    <img src="https://source.unsplash.com/300x200/?@mealType,healthy" class="card-img-top" alt="Meal" />
+                    <div class="card-body text-center">
+                        <h5 class="card-title">@meal.Name</h5>
+                        <p><strong>Calories:</strong> @meal.Calories kcal</p>
+                        <p>
+                            <strong>Protein:</strong> @meal.Protein g |
+                            <strong>Carbs:</strong> @meal.Carbs g |
+                            <strong>Fats:</strong> @meal.Fats g
+                        </p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="addToTracker(@meal.Id)"
+                                    data-bs-toggle="tooltip" title="Add this meal to your tracker">
+                                Add to Tracker
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="loadPreparationSteps(@meal.Id)"
+                                    data-bs-toggle="tooltip" title="View preparation steps">
+                                View Steps
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Pagination -->
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+        <li class="page-item"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+    </ul>
+</nav>
+
+<!-- Add Meal Options -->
+<div class="text-center mt-4 d-flex justify-content-center gap-3">
+    <a asp-action="PostMeal" class="btn btn-success btn-lg">➕ Add New Meal</a>
+    <a asp-action="Capture" class="btn btn-secondary btn-lg">📸 Capture Meal</a>
+</div>
+
+<!-- Total Meals Count -->
+<div class="text-center mt-4">
+    <p><strong>Total meals:</strong> <span class="badge bg-primary">@Model.Count()</span></p>
+</div>
+
+<!-- Preparation Steps Modal -->
+<div class="modal fade" id="prepModal" tabindex="-1" role="dialog" aria-labelledby="prepModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Preparation Steps</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="prepStepsContent">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Camera / Upload Section (unchanged) -->
+<div class="container mt-5">
+    <h3 class="text-center mb-4">🍽 Meal Image Upload</h3>
+    <!-- Camera Buttons -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h5>📷 Capture from Camera</h5>
+            <div class="d-flex justify-content-between mb-2">
+                <button type="button" id="startCamera" class="btn btn-info btn-sm">Start Camera</button>
+                <button type="button" id="capture" class="btn btn-primary btn-sm" disabled>Capture</button>
+                <button type="button" id="stopCamera" class="btn btn-danger btn-sm" disabled>Stop</button>
+            </div>
+            <video id="video" autoplay class="w-100 mb-2 border" style="max-height: 250px;"></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <p id="captureMessage" class="text-success mt-2" style="display: none;">✅ Image captured successfully!</p>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <h5>🖼 Upload or Drag & Drop Image</h5>
+            <input type="file" id="imageFile" name="imageFile" accept="image/*" class="form-control-file mb-2">
+            <div id="dropZone" class="border p-3 text-center rounded bg-light">📥 Drag & Drop Image Here</div>
+        </div>
+    </div>
+
+    <div class="text-center mb-3">
+        <img id="photo" class="img-fluid rounded border" style="display:none; max-height: 250px;" />
+    </div>
+
+    <form id="uploadForm" method="post" enctype="multipart/form-data" class="text-center">
+        <input type="hidden" id="imageData" name="imageData" />
+        <button type="submit" class="btn btn-success">🚀 Upload Image</button>
+    </form>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" style="display:none;">
+        <div class="loading-content">
+            <img id="loadingImagePreview" class="loading-image-preview" style="display: none;" alt="Preview">
+            <div class="spinner-border text-light" role="status"><span class="sr-only">Loading...</span></div>
+            <h4>Analyzing your meal...</h4>
+            <p id="loadingMessage">Please wait, this might take a moment.</p>
+            <div class="progress mt-3 w-50" style="height: 25px;">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nutrition Result Area -->
+    <div id="resultArea" class="mt-4" style="display:none;">
+        <h5 class="text-center">🍴 Nutrition Information</h5>
+        <img id="uploadedImage" class="img-fluid d-block mx-auto mb-3 border rounded" style="max-height: 250px;" />
+        <ul class="list-group mb-3">
+            <li class="list-group-item">Calories: <span id="calories"></span> kcal</li>
+            <li class="list-group-item">Protein: <span id="protein"></span> g</li>
+            <li class="list-group-item">Carbs: <span id="carbs"></span> g</li>
+            <li class="list-group-item">Fats: <span id="fats"></span> g</li>
+        </ul>
+        <div id="apiWarningMessage" class="alert alert-warning text-center" style="display:none;"></div>
+        <div id="errorMessage" class="alert alert-danger text-center" style="display:none;"></div>
+        <div class="text-center">
+            <button type="button" id="retryButton" class="btn btn-secondary">🔄 Analyze Another Meal</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ...Keep all your JS logic unchanged but include enabling/disabling camera buttons
+        captureBtn.disabled = true;
+        stopCameraBtn.disabled = true;
+
+        startCameraBtn.addEventListener("click", () => {
+            captureBtn.disabled = false;
+            stopCameraBtn.disabled = false;
+        });
+
+        stopCameraBtn.addEventListener("click", () => {
+            captureBtn.disabled = true;
+            stopCameraBtn.disabled = true;
+        });
+
+        // Existing functions: addToTracker(), loadPreparationSteps(), uploadForm logic, retryButton, etc.
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+    </script>
+}

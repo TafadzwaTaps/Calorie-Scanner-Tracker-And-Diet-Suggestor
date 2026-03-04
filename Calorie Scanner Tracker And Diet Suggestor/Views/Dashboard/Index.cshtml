@@ -1,0 +1,236 @@
+﻿@model Calorie_Scanner_Tracker_And_Diet_Suggestor.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h2 class="text-center fw-bold mb-4">@ViewData["Title"]</h2>
+
+<!-- Filters -->
+<form method="get" class="row g-3 mb-4 align-items-end">
+    <div class="col-md-3">
+        <label for="startDate" class="form-label">Start Date</label>
+        <input type="date" id="startDate" name="startDate" value="@Model.StartDateFilter?.ToString("yyyy-MM-dd")" class="form-control">
+    </div>
+    <div class="col-md-3">
+        <label for="endDate" class="form-label">End Date</label>
+        <input type="date" id="endDate" name="endDate" value="@Model.EndDateFilter?.ToString("yyyy-MM-dd")" class="form-control">
+    </div>
+    <div class="col-md-3">
+        <label for="mealType" class="form-label">Meal Type</label>
+        <select id="mealType" name="mealType" class="form-select">
+            <option value="">All Meals</option>
+            <option value="breakfast" @@(Model.MealTypeFilter == "breakfast" ? "selected" : "")>Breakfast</option>
+            <option value="lunch" @@(Model.MealTypeFilter == "lunch" ? "selected" : "")>Lunch</option>
+            <option value="dinner" @@(Model.MealTypeFilter == "dinner" ? "selected" : "")>Dinner</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+    </div>
+</form>
+
+@if (Model.FoodLogs == null || !Model.FoodLogs.Any())
+{
+    <div class="alert alert-info">No food logs available for the selected filters.</div>
+}
+else
+{
+    <div class="row mb-4">
+        <!-- Macronutrient Pie Chart -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Macronutrient Breakdown</h5>
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#pieChartCollapse">
+                        <i class="bi bi-arrows-angle-expand"></i>
+                    </button>
+                </div>
+                <div class="card-body collapse show" id="pieChartCollapse" style="height:350px;">
+                    <canvas id="caloriesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Calorie Bar Chart -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Daily Calorie Intake</h5>
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#barChartCollapse">
+                        <i class="bi bi-arrows-angle-expand"></i>
+                    </button>
+                </div>
+                <div class="card-body collapse show" id="barChartCollapse" style="height:350px;">
+                    <canvas id="dailyCaloriesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Calorie Trend -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Weekly Calorie Trend</h5>
+            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#trendChartCollapse">
+                <i class="bi bi-arrows-angle-expand"></i>
+            </button>
+        </div>
+        <div class="card-body collapse show" id="trendChartCollapse" style="height:350px;">
+            <canvas id="weeklyCaloriesTrend"></canvas>
+        </div>
+    </div>
+
+    <!-- Recently Logged Meals + Export Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4>Recently Logged Meals</h4>
+        <div class="btn-group">
+            <button class="btn btn-outline-success btn-sm" onclick="exportToExcel()"><i class="bi bi-file-earmark-spreadsheet"></i> Excel</button>
+            <button class="btn btn-outline-danger btn-sm" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="exportToCSV()"><i class="bi bi-file-earmark-text"></i> CSV</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped" id="foodLogTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Meal</th>
+                    <th>Type</th>
+                    <th>Calories</th>
+                    <th>Protein</th>
+                    <th>Carbs</th>
+                    <th>Fats</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.FoodLogs.OrderByDescending(f => f.DateLogged))
+                {
+                    <tr class="@(log.DateLogged.Date == DateTime.Today ? "table-success" : "")">
+                        <td>@log.DateLogged.ToShortDateString()</td>
+                        <td>@log.Meal.Name</td>
+                        <td>@log.Meal.MealType</td>
+                        <td>@log.Meal.Calories</td>
+                        <td>@log.Meal.Protein</td>
+                        <td>@log.Meal.Carbs</td>
+                        <td>@log.Meal.Fats</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script>
+    // Pie Chart
+    const pieCtx = document.getElementById('caloriesChart').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: @Html.Raw(Json.Serialize(Model.PieChartLabels)),
+            datasets: [{
+                data: @Html.Raw(Json.Serialize(Model.PieChartData)),
+                backgroundColor: ['#ff6384', '#36a2eb', '#ffce56'],
+                borderColor: '#fff',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a,b)=>a+b,0);
+                            const value = context.raw;
+                            const percent = ((value/total)*100).toFixed(1);
+                            return `${context.label}: ${value}g (${percent}%)`;
+                        }
+                    }
+                },
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Daily Calorie Bar Chart
+    const barCtx = document.getElementById('dailyCaloriesChart').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: @Html.Raw(Json.Serialize(Model.ChartData.Select(cd => cd.Date))),
+            datasets: [{
+                label: 'Calories',
+                data: @Html.Raw(Json.Serialize(Model.ChartData.Select(cd => cd.Calories))),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive:true, scales: { y: { beginAtZero:true } } }
+    });
+
+    // Weekly Calorie Trend (Bar + Line)
+    const trendCtx = document.getElementById('weeklyCaloriesTrend').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'bar',
+        data: {
+            labels: @Html.Raw(Json.Serialize(Model.ChartData.Select(cd => cd.Date))),
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'Calories',
+                    data: @Html.Raw(Json.Serialize(Model.ChartData.Select(cd => cd.Calories))),
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                },
+                {
+                    type: 'line',
+                    label: 'Target',
+                    data: @Html.Raw(Json.Serialize(Enumerable.Repeat(Model.TargetCalories, Model.ChartData.Count()).ToList())),
+                    borderColor: 'rgba(255, 99, 132, 0.9)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: { responsive:true, scales:{y:{beginAtZero:true}}, plugins:{legend:{position:'top'}} }
+    });
+
+    // Export Functions
+    function exportToExcel(){
+        const table = document.getElementById("foodLogTable");
+        XLSX.writeFile(XLSX.utils.table_to_book(table,{sheet:"Food Logs"}),"FoodLogs.xlsx");
+    }
+
+    async function exportToPDF(){
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const table = document.getElementById("foodLogTable");
+        const headers = Array.from(table.querySelectorAll("thead th")).map(th=>th.innerText);
+        const rows = Array.from(table.querySelectorAll("tbody tr")).map(tr=>Array.from(tr.querySelectorAll("td")).map(td=>td.innerText));
+        doc.text("Recently Logged Meals",14,15);
+        doc.autoTable({head:[headers],body:rows,startY:20});
+        doc.save("FoodLogs.pdf");
+    }
+
+    function exportToCSV(){
+        const table = document.getElementById("foodLogTable");
+        let csv = Array.from(table.querySelectorAll("tr"))
+            .map(tr=>Array.from(tr.querySelectorAll("th, td")).map(td=>`"${td.innerText.trim()}"`).join(","))
+            .join("\n");
+        const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "FoodLogs.csv";
+        link.click();
+    }
+</script>
+
+<!-- Optional Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
