@@ -48,6 +48,37 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         }
         #endregion
 
+        [HttpPost("CreateAjax")]
+        public async Task<IActionResult> CreateAjax([FromBody] MealLogDto dto)
+        {
+            int userId = GetUserId();
+            var meal = await _context.Meals.FindAsync(dto.MealId);
+            if (meal == null) return NotFound(new { success = false, message = "Meal not found" });
+
+            var log = new FoodLog
+            {
+                UserId = userId,
+                MealId = meal.Id,
+                IsEaten = true,
+                DateLogged = DateTime.UtcNow,
+                Calories = meal.Calories,
+                Protein = meal.Protein,
+                Carbs = meal.Carbs,
+                Fats = meal.Fats
+            };
+
+            _context.FoodLogs.Add(log);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true });
+        }
+
+        // DTO
+        public class MealLogDto
+        {
+            public int MealId { get; set; }
+        }
+
         #region DASHBOARD SUMMARY
         [HttpGet("Dashboard")]
         public async Task<IActionResult> Dashboard()
@@ -141,4 +172,6 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         }
         #endregion
     }
+
+
 }

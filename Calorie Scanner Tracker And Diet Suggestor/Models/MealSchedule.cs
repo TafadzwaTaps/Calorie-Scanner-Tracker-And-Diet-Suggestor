@@ -14,7 +14,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
         public string Status { get; set; } = "Planned"; // "Planned", "Eaten", "Skipped"
 
         // Navigation properties
-        public User User { get; set; }
+        public Users User { get; set; }
         public Meals Meal { get; set; }
 
         public MealSchedule()

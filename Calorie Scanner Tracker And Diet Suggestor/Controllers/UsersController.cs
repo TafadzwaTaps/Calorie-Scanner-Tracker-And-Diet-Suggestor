@@ -22,14 +22,14 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [HttpGet("")]
         public async Task<IActionResult> Index()
         {
-            return View(await _context.User.ToListAsync());
+            return View(await _context.Users.ToListAsync());
         }
 
         // GET: Users/Details/5
         [HttpGet("{id}")]
         public async Task<IActionResult> Details(int id)
         {
-            var user = await _context.User.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
             if (user == null) return NotFound();
             return View(user);
         }
@@ -43,7 +43,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [HttpPost("Create")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([Bind("Username,Email,PasswordHash,Role")] User users)
+        public async Task<IActionResult> Create([Bind("Username,Email,PasswordHash,Role")] Users users)
         {
             if (string.IsNullOrWhiteSpace(users.Email) || string.IsNullOrWhiteSpace(users.PasswordHash))
                 return BadRequest("Email and Password are required.");
@@ -64,7 +64,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(int id)
         {
-            var user = await _context.User.FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
             return View(user);
         }
@@ -72,7 +72,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         // POST: Users/Edit/5
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Username,Email,PasswordHash,Role")] User users)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Username,Email,PasswordHash,Role")] Users users)
         {
             if (id != users.Id) return NotFound();
 
@@ -99,7 +99,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
-            var user = await _context.User.FirstOrDefaultAsync(m => m.Id == id);
+            var user = await _context.Users.FirstOrDefaultAsync(m => m.Id == id);
             if (user == null) return NotFound();
             return View(user);
         }
@@ -110,10 +110,10 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var user = await _context.User.FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
             if (user != null)
             {
-                _context.User.Remove(user);
+                _context.Users.Remove(user);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
@@ -124,7 +124,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         public async Task<IActionResult> Profile()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var user = await _context.User.FindAsync(userId);
+            var user = await _context.Users.FindAsync(userId);
             if (user == null) return NotFound();
             return View(user);
         }
@@ -134,7 +134,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminDashboard()
         {
-            var users = await _context.User.ToListAsync();
+            var users = await _context.Users.ToListAsync();
             return View(users);
         }
 
@@ -143,7 +143,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> SetRole(int id, string role)
         {
-            var user = await _context.User.FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
 
             if (role != "Admin" && role != "User") return BadRequest("Invalid role.");
@@ -153,6 +153,6 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             return RedirectToAction("AdminDashboard");
         }
 
-        private bool UserExists(int id) => _context.User.Any(e => e.Id == id);
+        private bool UserExists(int id) => _context.Users.Any(e => e.Id == id);
     }
 }

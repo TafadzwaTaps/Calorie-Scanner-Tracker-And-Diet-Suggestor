@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
 {
-    public class User
+    public class Users
     {
         public int Id { get; set; }
         [Required]
@@ -24,7 +24,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
         public bool EmailNotifications { get; set; }
         [NotMapped]
         public bool PushNotifications { get; set; }
-        public User()
+        public Users()
         {
             
         }

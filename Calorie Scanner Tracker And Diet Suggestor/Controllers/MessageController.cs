@@ -104,7 +104,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         [HttpGet("Create")]
         public async Task<IActionResult> Create()
         {
-            ViewBag.Users = await _context.User
+            ViewBag.Users = await _context.Users
                 .Select(u => u.Username)
                 .ToListAsync();
 
@@ -120,7 +120,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             if (string.IsNullOrEmpty(message.ReceiverId))
                 return BadRequest("Receiver required.");
 
-            bool receiverExists = await _context.User
+            bool receiverExists = await _context.Users
                 .AnyAsync(u => u.Username == message.ReceiverId);
 
             if (!receiverExists)
@@ -146,7 +146,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             if (string.IsNullOrEmpty(message.ReceiverId) || string.IsNullOrEmpty(message.Content))
                 return BadRequest("Invalid message.");
 
-            bool receiverExists = await _context.User
+            bool receiverExists = await _context.Users
                 .AnyAsync(u => u.Username == message.ReceiverId);
 
             if (!receiverExists)

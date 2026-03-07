@@ -19,13 +19,13 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         public IActionResult Register() => View();
 
         [HttpPost]
-        public async Task<IActionResult> Register(User user)
+        public async Task<IActionResult> Register(Users user)
         {
             if (string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrWhiteSpace(user.PasswordHash))
                 return BadRequest("Email and Password are required.");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
-            _context.User.Add(user);
+            _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return RedirectToAction("Login");
         }
@@ -33,7 +33,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         public IActionResult Login() => View();
 
         [HttpPost]
-        public async Task<IActionResult> Login(User user)
+        public async Task<IActionResult> Login(Users user)
         {
             if (string.IsNullOrEmpty(user.Password))
             {
@@ -41,7 +41,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
                 return View();
             }
 
-            var dbUser = await _context.User.FirstOrDefaultAsync(u => u.Email == user.Email);
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
             if (dbUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, dbUser.PasswordHash))
             {
                 ModelState.AddModelError("", "Invalid email or password.");
@@ -100,17 +100,17 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             if (string.IsNullOrEmpty(email))
                 return RedirectToAction("Login");
 
-            var user = await _context.User.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
-                user = new User
+                user = new Users
                 {
                     Email = email,
                     Username = name ?? "Google User",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
                     Role = "User"
                 };
-                _context.User.Add(user);
+                _context.Users.Add(user);
                 await _context.SaveChangesAsync();
             }
 
@@ -146,17 +146,17 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             if (string.IsNullOrEmpty(email))
                 return RedirectToAction("Login");
 
-            var user = await _context.User.FirstOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
-                user = new User
+                user = new Users
                 {
                     Email = email,
                     Username = name ?? "Facebook User",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
                     Role = "User"
                 };
-                _context.User.Add(user);
+                _context.Users.Add(user);
                 await _context.SaveChangesAsync();
             }
 
@@ -185,7 +185,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            var user = _context.User.SingleOrDefault(u => u.Email == model.Email);
+            var user = _context.Users.SingleOrDefault(u => u.Email == model.Email);
             if (user == null)
             {
                 ModelState.AddModelError("", "User with the specified email does not exist.");
@@ -203,7 +203,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            var user = _context.User.SingleOrDefault(u => u.Email == model.Email);
+            var user = _context.Users.SingleOrDefault(u => u.Email == model.Email);
             if (user == null)
             {
                 ModelState.AddModelError("", "User with the specified email does not exist.");

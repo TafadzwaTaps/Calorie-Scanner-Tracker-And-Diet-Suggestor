@@ -20,5 +20,6 @@
         public decimal Fats { get; set; }
         public string? WarningMessage { get; set; }
         public string? Error { get; set; }
+        public string? FoodName { get; set; }
     }
 }

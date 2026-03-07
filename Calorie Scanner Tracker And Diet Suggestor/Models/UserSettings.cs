@@ -6,7 +6,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Models
     {
         public int Id { get; set; }
         public int UserId { get; set; } // Foreign Key
-        public User User { get; set; } // Navigation Property
+        public Users User { get; set; } // Navigation Property
 
         public string? Profile { get; set; }  // e.g., "Male, 4 Feb 2000, 174 cm"
         public string? Goals { get; set; }  // e.g., "90kg → 78kg, 0.5 kg/wk"

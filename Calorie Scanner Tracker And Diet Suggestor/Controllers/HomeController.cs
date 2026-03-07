@@ -51,7 +51,7 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userId, out int id)) return RedirectToAction("Login", "Auth");
 
-            var user = await _context.User.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
             if (user == null) return NotFound("User not found.");
 
             return View(user);

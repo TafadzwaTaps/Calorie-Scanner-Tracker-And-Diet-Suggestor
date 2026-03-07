@@ -11,7 +11,8 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Service
         public NutritionApiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("https://nutritionalfoodapi-c0ye.onrender.com");
+            _httpClient.Timeout = TimeSpan.FromMinutes(10);
+            _httpClient.BaseAddress = new Uri("https://rathious-nutritional-food-api.hf.space/");
         }
 
         public async Task<FoodAnalysisResult> AnalyzeImageAsync(byte[] imageBytes, string fileName)
@@ -22,20 +23,42 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Service
                 using var stream = new MemoryStream(imageBytes);
                 using var fileContent = new StreamContent(stream);
 
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue(GetContentType(fileName));
+                fileContent.Headers.ContentType =
+                    new MediaTypeHeaderValue(GetContentType(fileName));
+
                 content.Add(fileContent, "file", fileName);
 
                 var response = await _httpClient.PostAsync("analyze", content);
+
                 var json = await response.Content.ReadAsStringAsync();
 
-                var apiResult = JsonSerializer.Deserialize<FoodAnalysisApiResponse>(json,
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new FoodAnalysisResult
+                    {
+                        Error = $"Nutrition API error: {response.StatusCode} | {json}"
+                    };
+                }
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return new FoodAnalysisResult
+                    {
+                        Error = "Nutrition API returned empty response"
+                    };
+                }
+
+                var apiResult = JsonSerializer.Deserialize<FoodAnalysisApiResponse>(
+                    json,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (apiResult == null)
-                    return new FoodAnalysisResult { Error = "Invalid response from nutrition API" };
-
-                if (!string.IsNullOrEmpty(apiResult.Error))
-                    return new FoodAnalysisResult { Error = apiResult.Error };
+                {
+                    return new FoodAnalysisResult
+                    {
+                        Error = "Invalid JSON from nutrition API"
+                    };
+                }
 
                 return new FoodAnalysisResult
                 {
@@ -48,7 +71,10 @@ namespace Calorie_Scanner_Tracker_And_Diet_Suggestor.Service
             }
             catch (Exception ex)
             {
-                return new FoodAnalysisResult { Error = ex.Message };
+                return new FoodAnalysisResult
+                {
+                    Error = $"Service exception: {ex.Message}"
+                };
             }
         }
 
